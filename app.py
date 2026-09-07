@@ -1021,7 +1021,636 @@ def seasonality_page():
         </script>
     </body>
     </html>
-    """
+
+   """
+# ====================
+# صفحة لوحة التحكم المتقدمة
+# ====================
+@app.route('/dashboard')
+def dashboard_page():
+    """لوحة تحكم متقدمة"""
+    return """
+    <!DOCTYPE html>
+    <html dir="rtl">
+    <head>
+        <title>لوحة التحكم المتقدمة</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { 
+                font-family: 'Segoe UI', Tahoma, Arial; 
+                background: #f0f2f5; 
+                padding: 15px;
+            }
+            .container { 
+                max-width: 1600px; 
+                margin: auto; 
+                background: white; 
+                padding: 25px; 
+                border-radius: 15px; 
+                box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            }
+            .header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+                border-bottom: 4px solid #3498db;
+                padding-bottom: 15px;
+                margin-bottom: 25px;
+            }
+            .header h1 {
+                color: #2c3e50;
+                font-size: 28px;
+            }
+            .header .date-time {
+                color: #7f8c8d;
+                font-size: 14px;
+            }
+            .nav-links {
+                display: flex;
+                gap: 10px;
+                margin: 10px 0 20px;
+                flex-wrap: wrap;
+            }
+            .nav-links a {
+                padding: 8px 16px;
+                border-radius: 8px;
+                text-decoration: none;
+                font-weight: bold;
+                font-size: 14px;
+                transition: all 0.3s;
+            }
+            .nav-links a:hover { opacity: 0.8; transform: translateY(-2px); }
+            .btn-primary { background: #3498db; color: white; }
+            .btn-success { background: #27ae60; color: white; }
+            .btn-warning { background: #e67e22; color: white; }
+            .btn-info { background: #1abc9c; color: white; }
+            .btn-danger { background: #e74c3c; color: white; }
+            .btn-purple { background: #8e44ad; color: white; }
+            .btn-dashboard { background: #2c3e50; color: white; }
+            
+            /* بطاقات الإحصائيات */
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 15px;
+                margin: 20px 0;
+            }
+            .stat-card {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                padding: 20px;
+                border-radius: 12px;
+                color: white;
+                transition: transform 0.3s;
+            }
+            .stat-card:hover { transform: translateY(-5px); }
+            .stat-card:nth-child(2) { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+            .stat-card:nth-child(3) { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+            .stat-card:nth-child(4) { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+            .stat-card:nth-child(5) { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+            .stat-card:nth-child(6) { background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); }
+            .stat-card .stat-value {
+                font-size: 32px;
+                font-weight: bold;
+            }
+            .stat-card .stat-label {
+                font-size: 14px;
+                opacity: 0.9;
+                margin-top: 5px;
+            }
+            .stat-card .stat-change {
+                font-size: 12px;
+                margin-top: 8px;
+                display: inline-block;
+                padding: 2px 10px;
+                border-radius: 20px;
+                background: rgba(255,255,255,0.2);
+            }
+            
+            /* شبكة الرسوم البيانية */
+            .charts-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
+                margin: 20px 0;
+            }
+            .chart-card {
+                background: #f8f9fa;
+                padding: 20px;
+                border-radius: 12px;
+                border: 1px solid #e9ecef;
+            }
+            .chart-card h3 {
+                color: #2c3e50;
+                margin-bottom: 15px;
+                font-size: 16px;
+            }
+            .chart-card canvas {
+                max-height: 250px;
+                width: 100% !important;
+            }
+            
+            /* جدول البيانات */
+            .table-container {
+                overflow-x: auto;
+                margin: 20px 0;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 14px;
+            }
+            th, td {
+                padding: 10px 12px;
+                text-align: right;
+                border-bottom: 1px solid #eee;
+            }
+            th {
+                background: #2c3e50;
+                color: white;
+                font-weight: 600;
+            }
+            tr:hover { background: #f5f5f5; }
+            .badge {
+                display: inline-block;
+                padding: 3px 10px;
+                border-radius: 20px;
+                font-size: 11px;
+                font-weight: bold;
+            }
+            .badge-vip { background: #ffd700; color: #333; }
+            .badge-loyal { background: #4CAF50; color: white; }
+            .badge-potential { background: #2196F3; color: white; }
+            .badge-at_risk { background: #ff9800; color: white; }
+            .badge-lost { background: #f44336; color: white; }
+            .badge-other { background: #9e9e9e; color: white; }
+            
+            /* شريط التقدم */
+            .progress-bar-container {
+                margin: 5px 0;
+            }
+            .progress-bar {
+                height: 8px;
+                background: #e9ecef;
+                border-radius: 4px;
+                overflow: hidden;
+            }
+            .progress-bar .fill {
+                height: 100%;
+                border-radius: 4px;
+                transition: width 1s;
+            }
+            
+            /* تذييل */
+            .footer {
+                text-align: center;
+                margin-top: 30px;
+                padding-top: 20px;
+                border-top: 1px solid #eee;
+                color: #999;
+                font-size: 12px;
+            }
+            
+            /* استجابة للجوال */
+            @media (max-width: 768px) {
+                .charts-grid { grid-template-columns: 1fr; }
+                .header { flex-direction: column; align-items: flex-start; gap: 10px; }
+                .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            }
+            @media (max-width: 480px) {
+                .stats-grid { grid-template-columns: 1fr; }
+                .nav-links a { font-size: 12px; padding: 6px 12px; }
+            }
+            
+            /* زر التحديث */
+            .refresh-btn {
+                background: #3498db;
+                color: white;
+                border: none;
+                padding: 8px 20px;
+                border-radius: 8px;
+                cursor: pointer;
+                font-weight: bold;
+                transition: opacity 0.3s;
+            }
+            .refresh-btn:hover { opacity: 0.8; }
+            .loading-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(255,255,255,0.8);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 9999;
+                font-size: 24px;
+                color: #3498db;
+            }
+            .loading-overlay.hidden { display: none; }
+        </style>
+    </head>
+    <body>
+        <!-- طبقة التحميل -->
+        <div id="loadingOverlay" class="loading-overlay">
+            <div>⏳ جاري تحميل البيانات...</div>
+        </div>
+        
+        <div class="container">
+            <!-- الرأس -->
+            <div class="header">
+                <div>
+                    <h1>📊 لوحة التحكم المتقدمة</h1>
+                    <div style="font-size:14px;color:#7f8c8d;margin-top:5px;">
+                        نظام تحليل المبيعات والعملاء
+                    </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:15px;flex-wrap:wrap;">
+                    <span class="date-time" id="currentTime"></span>
+                    <button class="refresh-btn" onclick="refreshData()">🔄 تحديث</button>
+                </div>
+            </div>
+            
+            <!-- روابط التنقل -->
+            <div class="nav-links">
+                <a href="/" class="btn-primary">🏠 الرئيسية</a>
+                <a href="/dashboard" class="btn-dashboard">📊 لوحة التحكم</a>
+                <a href="/customers" class="btn-success">👥 تحليل العملاء</a>
+                <a href="/forecast" class="btn-warning">🔮 التنبؤ</a>
+                <a href="/seasonality" class="btn-info">🌦️ التحليل الموسمي</a>
+                <a href="/reports" class="btn-purple">📄 التقارير</a>
+            </div>
+            
+            <!-- إحصائيات سريعة -->
+            <div class="stats-grid" id="quickStats">
+                <div class="stat-card"><div class="stat-value">-</div><div class="stat-label">💰 إجمالي الإيرادات</div></div>
+                <div class="stat-card"><div class="stat-value">-</div><div class="stat-label">👥 إجمالي العملاء</div></div>
+                <div class="stat-card"><div class="stat-value">-</div><div class="stat-label">📦 عدد المعاملات</div></div>
+                <div class="stat-card"><div class="stat-value">-</div><div class="stat-label">🛒 متوسط السلة</div></div>
+                <div class="stat-card"><div class="stat-value">-</div><div class="stat-label">🔄 معدل الاحتفاظ</div></div>
+                <div class="stat-card"><div class="stat-value">-</div><div class="stat-label">🏆 عدد العملاء المميزين</div></div>
+            </div>
+            
+            <!-- الرسوم البيانية -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>📈 اتجاه المبيعات (آخر 30 يوم)</h3>
+                    <canvas id="salesTrendChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>👥 توزيع شرائح العملاء</h3>
+                    <canvas id="segmentChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>💰 توزيع الإيرادات حسب الشهر</h3>
+                    <canvas id="monthlyRevenueChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>📊 توزيع درجات RFM</h3>
+                    <canvas id="rfmDistributionChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- أفضل العملاء -->
+            <div class="table-container">
+                <h3 style="color:#2c3e50;margin-bottom:15px;">🏆 أفضل العملاء من حيث القيمة</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>معرف العميل</th>
+                            <th>القيمة الإجمالية</th>
+                            <th>عدد المعاملات</th>
+                            <th>درجة RFM</th>
+                            <th>الشريحة</th>
+                            <th>آخر معاملة</th>
+                        </tr>
+                    </thead>
+                    <tbody id="topCustomersTable"></tbody>
+                </table>
+            </div>
+            
+            <!-- تذييل -->
+            <div class="footer">
+                نظام تحليل المبيعات والعملاء | تم التحديث: <span id="updateTime"></span>
+            </div>
+        </div>
+        
+        <script>
+            // ====================
+            // دوال مساعدة
+            // ====================
+            
+            // تحديث الوقت
+            function updateTime() {
+                const now = new Date();
+                document.getElementById('currentTime').textContent = now.toLocaleString('ar-SA');
+                document.getElementById('updateTime').textContent = now.toLocaleString('ar-SA');
+            }
+            updateTime();
+            setInterval(updateTime, 60000);
+            
+            // إظهار/إخفاء التحميل
+            function showLoading(show) {
+                document.getElementById('loadingOverlay').classList.toggle('hidden', !show);
+            }
+            
+            // ====================
+            // تحميل البيانات
+            // ====================
+            
+            function refreshData() {
+                showLoading(true);
+                Promise.all([
+                    fetch('/api/dashboard_stats').then(r => r.json()),
+                    fetch('/api/sales_trend').then(r => r.json()),
+                    fetch('/api/rfm').then(r => r.json()),
+                    fetch('/api/seasonality').then(r => r.json())
+                ])
+                .then(([stats, trend, rfm, seasonality]) => {
+                    updateStats(stats);
+                    updateCharts(trend, rfm, seasonality);
+                    updateTopCustomers(rfm);
+                    showLoading(false);
+                })
+                .catch(error => {
+                    console.error('خطأ:', error);
+                    showLoading(false);
+                    alert('❌ خطأ في تحميل البيانات: ' + error.message);
+                });
+            }
+            
+            // ====================
+            // تحديث الإحصائيات
+            // ====================
+            
+            function updateStats(data) {
+                const stats = [
+                    {selector: 0, value: '$' + (data.total_revenue || 0).toFixed(2), label: '💰 إجمالي الإيرادات'},
+                    {selector: 1, value: data.unique_customers || 0, label: '👥 إجمالي العملاء'},
+                    {selector: 2, value: data.total_transactions || 0, label: '📦 عدد المعاملات'},
+                    {selector: 3, value: '$' + (data.average_basket || 0).toFixed(2), label: '🛒 متوسط السلة'},
+                    {selector: 4, value: ((data.retention_rate || 0) * 100).toFixed(1) + '%', label: '🔄 معدل الاحتفاظ'},
+                    {selector: 5, value: data.vip_customers || 0, label: '🏆 عدد العملاء المميزين'}
+                ];
+                
+                const cards = document.querySelectorAll('.stat-card');
+                stats.forEach((s, i) => {
+                    if (cards[i]) {
+                        cards[i].innerHTML = `
+                            <div class="stat-value">${s.value}</div>
+                            <div class="stat-label">${s.label}</div>
+                        `;
+                    }
+                });
+            }
+            
+            // ====================
+            // تحديث الرسوم البيانية
+            // ====================
+            
+            let charts = {};
+            
+            function updateCharts(trend, rfm, seasonality) {
+                // 1. اتجاه المبيعات
+                if (trend.data && trend.data.length > 0) {
+                    const dates = trend.data.map(d => d.date);
+                    const values = trend.data.map(d => d.sales);
+                    
+                    if (charts.salesTrend) charts.salesTrend.destroy();
+                    
+                    const ctx = document.getElementById('salesTrendChart').getContext('2d');
+                    charts.salesTrend = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: dates,
+                            datasets: [{
+                                label: 'المبيعات اليومية',
+                                data: values,
+                                borderColor: '#3498db',
+                                backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                                fill: true,
+                                tension: 0.4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                y: { beginAtZero: true, ticks: { callback: v => '$' + v.toFixed(0) } }
+                            }
+                        }
+                    });
+                }
+                
+                // 2. توزيع الشرائح
+                if (rfm.segment_stats) {
+                    const segments = Object.keys(rfm.segment_stats);
+                    const counts = Object.values(rfm.segment_stats);
+                    const colors = {
+                        vip: '#ffd700',
+                        loyal: '#4CAF50',
+                        potential: '#2196F3',
+                        at_risk: '#ff9800',
+                        lost: '#f44336',
+                        other: '#9e9e9e'
+                    };
+                    
+                    if (charts.segment) charts.segment.destroy();
+                    
+                    const ctx2 = document.getElementById('segmentChart').getContext('2d');
+                    charts.segment = new Chart(ctx2, {
+                        type: 'doughnut',
+                        data: {
+                            labels: segments,
+                            datasets: [{
+                                data: counts,
+                                backgroundColor: segments.map(s => colors[s] || '#9e9e9e')
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: { position: 'bottom' }
+                            }
+                        }
+                    });
+                }
+                
+                // 3. الإيرادات الشهرية
+                if (seasonality.monthly) {
+                    const months = seasonality.monthly.map(m => m.month_name);
+                    const revenues = seasonality.monthly.map(m => m.total_sales);
+                    
+                    if (charts.monthlyRevenue) charts.monthlyRevenue.destroy();
+                    
+                    const ctx3 = document.getElementById('monthlyRevenueChart').getContext('2d');
+                    charts.monthlyRevenue = new Chart(ctx3, {
+                        type: 'bar',
+                        data: {
+                            labels: months,
+                            datasets: [{
+                                label: 'الإيرادات',
+                                data: revenues,
+                                backgroundColor: 'rgba(52, 152, 219, 0.7)',
+                                borderColor: '#3498db',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                y: { beginAtZero: true, ticks: { callback: v => '$' + v.toFixed(0) } }
+                            }
+                        }
+                    });
+                }
+                
+                // 4. توزيع درجات RFM
+                if (rfm.score_distribution) {
+                    const rScores = rfm.score_distribution.r_scores || {};
+                    const fScores = rfm.score_distribution.f_scores || {};
+                    const mScores = rfm.score_distribution.m_scores || {};
+                    
+                    const scores = [1, 2, 3, 4, 5];
+                    const rData = scores.map(s => rScores[s] || 0);
+                    const fData = scores.map(s => fScores[s] || 0);
+                    const mData = scores.map(s => mScores[s] || 0);
+                    
+                    if (charts.rfmDist) charts.rfmDist.destroy();
+                    
+                    const ctx4 = document.getElementById('rfmDistributionChart').getContext('2d');
+                    charts.rfmDist = new Chart(ctx4, {
+                        type: 'bar',
+                        data: {
+                            labels: ['1', '2', '3', '4', '5'],
+                            datasets: [
+                                { label: 'الحداثة (R)', data: rData, backgroundColor: '#e74c3c' },
+                                { label: 'التكرار (F)', data: fData, backgroundColor: '#3498db' },
+                                { label: 'القيمة (M)', data: mData, backgroundColor: '#2ecc71' }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: { position: 'top' }
+                            },
+                            scales: {
+                                y: { beginAtZero: true }
+                            }
+                        }
+                    });
+                }
+            }
+            
+            // ====================
+            // تحديث جدول أفضل العملاء
+            // ====================
+            
+            function updateTopCustomers(rfm) {
+                const tbody = document.getElementById('topCustomersTable');
+                tbody.innerHTML = '';
+                
+                if (!rfm.top_customers || rfm.top_customers.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#999;">لا توجد بيانات</td></tr>';
+                    return;
+                }
+                
+                const badges = {
+                    vip: 'badge-vip',
+                    loyal: 'badge-loyal',
+                    potential: 'badge-potential',
+                    at_risk: 'badge-at_risk',
+                    lost: 'badge-lost',
+                    other: 'badge-other'
+                };
+                
+                rfm.top_customers.slice(0, 10).forEach((c, i) => {
+                    const row = document.createElement('tr');
+                    const badgeClass = badges[c.segment] || 'badge-other';
+                    row.innerHTML = `
+                        <td>${i + 1}</td>
+                        <td><strong>${c.customer_id}</strong></td>
+                        <td>$${c.monetary.toFixed(2)}</td>
+                        <td>${c.frequency || '-'}</td>
+                        <td>${c.rfm_score.toFixed(1)}</td>
+                        <td><span class="badge ${badgeClass}">${c.segment}</span></td>
+                        <td>${c.last_purchase || '-'}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+            
+            // ====================
+            // تشغيل التطبيق
+            // ====================
+            
+            // تحميل البيانات عند تحميل الصفحة
+            document.addEventListener('DOMContentLoaded', function() {
+                refreshData();
+            });
+            
+            // تحديث كل 5 دقائق
+            setInterval(refreshData, 300000);
+            
+            // جعل الدالة متاحة عالمياً
+            window.refreshData = refreshData;
+        </script>
+    </body>
+    </html>
+
+   """
+# ====================
+# API: إحصائيات لوحة التحكم
+# ====================
+@app.route('/api/dashboard_stats')
+def api_dashboard_stats():
+    """API لإحصائيات لوحة التحكم"""
+    try:
+        kpi_analyzer = KPIAnalyzer()
+        
+        transaction_id = config['analysis'].get('transaction_id', 'transaction_id')
+        if transaction_id not in df.columns:
+            transaction_id = df.columns[0]
+        
+        kpis = kpi_analyzer.calculate_all_kpis(
+            df,
+            customer_id,
+            transaction_id,
+            date_col,
+            amount_col
+        )
+        
+        # حساب العملاء المميزين (VIP)
+        rfm_analyzer = RFMAnalyzer()
+        rfm_results = rfm_analyzer.analyze_rfm(
+            df,
+            customer_id,
+            date_col,
+            amount_col,
+            config['analysis']['rfm']['segments']
+        )
+        
+        rfm_df = rfm_results['rfm_scores']
+        vip_count = len(rfm_df[rfm_df['segment'] == 'vip'])
+        
+        return jsonify({
+            'total_revenue': kpis['total_revenue'],
+            'unique_customers': kpis['unique_customers'],
+            'total_transactions': kpis['total_transactions'],
+            'average_basket': kpis['average_basket'],
+            'retention_rate': kpis['retention_rate'],
+            'vip_customers': vip_count,
+            'avg_customer_value': kpis['avg_customer_value']
+        })
+    except Exception as e:
+        return jsonify({'error': str(e), 'traceback': traceback.format_exc()}), 500
 
 # ====================
 # تشغيل التطبيق

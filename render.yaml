@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: data-analysis-project
+    runtime: python
+    repo: https://github.com/agricolecooperative16-lgtm/data-analysis-project
+    plan: free
+    region: oregon
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.0

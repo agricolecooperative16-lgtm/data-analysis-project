@@ -126,3 +126,58 @@
 2026-09-07 12:25:53 - src.models.forecasting - INFO - تشغيل نموذج متعدد الحدود (degree=2)...
 2026-09-07 12:25:53 - src.models.forecasting - INFO - تشغيل نموذج متعدد الحدود (degree=3)...
 2026-09-07 12:25:55 - src.analytics.seasonality - INFO - ✅ تم تحليل الموسمية بنجاح
+2026-09-07 15:10:50 - src.data.loader - INFO - تحميل البيانات من data\raw\sales_data.csv
+2026-09-07 15:10:50 - src.data.loader - INFO - تم تحميل 1000 سجل بنجاح
+2026-09-07 15:10:50 - src.data.cleaner - INFO - تم تحويل transaction_date إلى نوع datetime بنجاح
+2026-09-07 15:10:51 - src.data.loader - INFO - تحميل البيانات من data\raw\sales_data.csv
+2026-09-07 15:10:51 - src.data.loader - INFO - تم تحميل 1000 سجل بنجاح
+2026-09-07 15:10:51 - src.data.cleaner - INFO - تم تحويل transaction_date إلى نوع datetime بنجاح
+2026-09-07 15:10:56 - src.analytics.seasonality - INFO - ✅ تم تحليل الموسمية بنجاح
+2026-09-07 15:10:59 - src.analytics.seasonality - INFO - ✅ تم تحليل الموسمية بنجاح
+2026-09-07 15:12:58 - src.data.loader - INFO - تحميل البيانات من data\raw\sales_data.csv
+2026-09-07 15:12:58 - src.data.loader - INFO - تم تحميل 1000 سجل بنجاح
+2026-09-07 15:12:58 - src.data.cleaner - INFO - تم تحويل transaction_date إلى نوع datetime بنجاح
+2026-09-07 15:13:07 - src.data.loader - INFO - تحميل البيانات من data\raw\sales_data.csv
+2026-09-07 15:13:07 - src.data.loader - INFO - تم تحميل 1000 سجل بنجاح
+2026-09-07 15:13:07 - src.data.cleaner - INFO - تم تحويل transaction_date إلى نوع datetime بنجاح
+2026-09-07 15:35:36 - src.data.loader - INFO - تحميل البيانات من data\raw\sales_data.csv
+2026-09-07 15:35:36 - src.data.loader - INFO - تم تحميل 1000 سجل بنجاح
+2026-09-07 15:35:36 - src.data.cleaner - INFO - تم تحويل transaction_date إلى نوع datetime بنجاح
+2026-09-07 15:37:08 - src.data.loader - INFO - تحميل البيانات من data\raw\sales_data.csv
+2026-09-07 15:37:08 - src.data.loader - INFO - تم تحميل 1000 سجل بنجاح
+2026-09-07 15:37:08 - src.data.cleaner - INFO - تم تحويل transaction_date إلى نوع datetime بنجاح
+2026-09-07 15:37:09 - src.data.loader - INFO - تحميل البيانات من data\raw\sales_data.csv
+2026-09-07 15:37:09 - src.data.loader - INFO - تم تحميل 1000 سجل بنجاح
+2026-09-07 15:37:09 - src.data.cleaner - INFO - تم تحويل transaction_date إلى نوع datetime بنجاح
+2026-09-07 15:37:19 - src.analytics.kpis - INFO - تم حساب جميع مؤشرات الأداء بنجاح
+2026-09-07 15:37:25 - src.analytics.kpis - INFO - تم حساب جميع مؤشرات الأداء بنجاح
+2026-09-07 15:37:28 - src.features.rfm - INFO - تم حساب RFM لـ 198 عميل
+2026-09-07 15:37:28 - src.features.rfm - INFO - تم تعيين درجات RFM للعملاء
+2026-09-07 15:37:28 - src.features.rfm - INFO - تم تقسيم العملاء إلى 4 شرائح
+2026-09-07 15:37:32 - src.models.forecasting - INFO - تشغيل نموذج الانحدار الخطي...
+2026-09-07 15:37:32 - src.models.forecasting - INFO - تشغيل نموذج متعدد الحدود (degree=2)...
+2026-09-07 15:37:32 - src.models.forecasting - INFO - تشغيل نموذج متعدد الحدود (degree=3)...
+2026-09-07 15:37:35 - src.analytics.seasonality - INFO - ✅ تم تحليل الموسمية بنجاح
+2026-09-07 15:37:40 - src.analytics.kpis - INFO - تم حساب جميع مؤشرات الأداء بنجاح
+2026-09-07 15:37:55 - src.analytics.kpis - INFO - تم حساب جميع مؤشرات الأداء بنجاح
+2026-09-07 15:37:55 - src.features.rfm - INFO - تم حساب RFM لـ 198 عميل
+2026-09-07 15:37:55 - src.features.rfm - INFO - تم تعيين درجات RFM للعملاء
+2026-09-07 15:37:55 - src.features.rfm - INFO - تم تقسيم العملاء إلى 4 شرائح
+2026-09-07 15:37:55 - src.models.forecasting - INFO - تشغيل نموذج الانحدار الخطي...
+2026-09-07 15:37:55 - src.models.forecasting - INFO - تشغيل نموذج متعدد الحدود (degree=2)...
+2026-09-07 15:37:55 - src.models.forecasting - INFO - تشغيل نموذج متعدد الحدود (degree=3)...
+2026-09-07 15:38:36 - src.features.rfm - INFO - تم حساب RFM لـ 198 عميل
+2026-09-07 15:38:36 - src.features.rfm - INFO - تم تعيين درجات RFM للعملاء
+2026-09-07 15:38:36 - src.features.rfm - INFO - تم تقسيم العملاء إلى 4 شرائح
+2026-09-07 15:52:16 - src.data.loader - INFO - تحميل البيانات من data\raw\sales_data.csv
+2026-09-07 15:52:16 - src.data.loader - INFO - تم تحميل 1000 سجل بنجاح
+2026-09-07 15:52:16 - src.data.cleaner - INFO - تم تحويل transaction_date إلى نوع datetime بنجاح
+2026-09-07 15:52:25 - src.data.loader - INFO - تحميل البيانات من data\raw\sales_data.csv
+2026-09-07 15:52:25 - src.data.loader - INFO - تم تحميل 1000 سجل بنجاح
+2026-09-07 15:52:25 - src.data.cleaner - INFO - تم تحويل transaction_date إلى نوع datetime بنجاح
+2026-09-07 15:52:53 - src.data.loader - INFO - تحميل البيانات من data\raw\sales_data.csv
+2026-09-07 15:52:53 - src.data.loader - INFO - تم تحميل 1000 سجل بنجاح
+2026-09-07 15:52:53 - src.data.cleaner - INFO - تم تحويل transaction_date إلى نوع datetime بنجاح
+2026-09-07 15:53:01 - src.data.loader - INFO - تحميل البيانات من data\raw\sales_data.csv
+2026-09-07 15:53:01 - src.data.loader - INFO - تم تحميل 1000 سجل بنجاح
+2026-09-07 15:53:01 - src.data.cleaner - INFO - تم تحويل transaction_date إلى نوع datetime بنجاح
