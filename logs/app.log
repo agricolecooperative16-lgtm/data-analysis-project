@@ -1,0 +1,128 @@
+2026-09-07 10:16:12 - __main__ - INFO - تم تحميل الإعدادات بنجاح
+2026-09-07 10:16:12 - __main__ - ERROR - ❌ فشل تنفيذ التحليل: الملغير موجود: data\raw\sales_data.csv
+2026-09-07 10:16:26 - __main__ - INFO - تم تحميل الإعدادات بنجاح
+2026-09-07 10:16:26 - __main__ - ERROR - ❌ فشل تنفيذ التحليل: الملغير موجود: data\raw\sales_data.csv
+2026-09-07 10:16:37 - __main__ - INFO - تم تحميل الإعدادات بنجاح
+2026-09-07 10:16:37 - __main__ - ERROR - ❌ فشل تنفيذ التحليل: الملغير موجود: data\raw\sales_data.csv
+2026-09-07 10:30:38 - __main__ - INFO - تم تحميل الإعدادات بنجاح
+2026-09-07 10:30:38 - __main__ - ERROR - ❌ فشل تنفيذ التحليل: الملغير موجود: data\raw\sales_data.csv
+2026-09-07 10:32:03 - __main__ - INFO - تم تحميل الإعدادات بنجاح
+2026-09-07 10:32:03 - src.data.loader - INFO - تحميل البيانات من data\raw\sales_data.csv
+2026-09-07 10:32:03 - src.data.loader - INFO - تم تحميل 1000 سجل بنجاح
+2026-09-07 10:32:03 - __main__ - INFO - تم تحميل 1000 سجل
+2026-09-07 10:32:03 - src.data.cleaner - INFO - تم تحويل transaction_date إلى نوع datetime بنجاح
+2026-09-07 10:32:03 - __main__ - INFO - بدء تحليل المبيعات...
+2026-09-07 10:32:03 - src.analytics.kpis - INFO - تم حساب جميع مؤشرات الأداء بنجاح
+2026-09-07 10:32:03 - __main__ - INFO - تم حساب الـ KPIs: 7 مؤشر
+2026-09-07 10:32:03 - __main__ - INFO - بدء تحليل العملاء...
+2026-09-07 10:32:03 - __main__ - ERROR - ❌ فشل تنفيذ التحليل: cannot insert customer_id, already exists
+2026-09-07 10:34:10 - __main__ - INFO - تم تحميل الإعدادات بنجاح
+2026-09-07 10:34:10 - src.data.loader - INFO - تحميل البيانات من data\raw\sales_data.csv
+2026-09-07 10:34:10 - src.data.loader - INFO - تم تحميل 1000 سجل بنجاح
+2026-09-07 10:34:10 - __main__ - INFO - تم تحميل 1000 سجل
+2026-09-07 10:34:10 - src.data.cleaner - INFO - تم تحويل transaction_date إلى نوع datetime بنجاح
+2026-09-07 10:34:10 - __main__ - INFO - بدء تحليل المبيعات...
+2026-09-07 10:34:10 - src.analytics.kpis - INFO - تم حساب جميع مؤشرات الأداء بنجاح
+2026-09-07 10:34:10 - __main__ - INFO - تم حساب الـ KPIs: 7 مؤشر
+2026-09-07 10:34:10 - __main__ - INFO - بدء تحليل العملاء...
+2026-09-07 10:34:10 - src.features.rfm - INFO - تم حساب RFM لـ 198 عميل
+2026-09-07 10:34:10 - src.features.rfm - INFO - تم تعيين درجات RFM للعملاء
+2026-09-07 10:34:10 - src.features.rfm - INFO - تم تقسيم العملاء إلى 4 شرائح
+2026-09-07 10:34:10 - __main__ - INFO - تم تحليل RFM بنجاح
+2026-09-07 10:34:10 - __main__ - INFO - بدء إنشاء التصورات...
+2026-09-07 10:34:12 - src.visualization.plots - INFO - تم حفظ الشكل في reports\figures\kpi_dashboard.png
+2026-09-07 10:34:13 - src.visualization.plots - INFO - تم حفظ الشكل في reports\figures\rfm_distribution.png
+2026-09-07 10:34:14 - src.visualization.plots - INFO - تم حفظ الشكل في reports\figures\customer_segments.png
+2026-09-07 10:34:14 - __main__ - INFO - تم إنشاء التصورات بنجاح
+2026-09-07 10:34:14 - __main__ - INFO - ✅ تم إنجاز التحليل بنجاح!
+2026-09-07 11:35:27 - src.data.loader - INFO - تحميل البيانات من data\raw\sales_data.csv
+2026-09-07 11:35:27 - src.data.loader - INFO - تم تحميل 1000 سجل بنجاح
+2026-09-07 11:35:27 - src.data.cleaner - INFO - تم تحويل transaction_date إلى نوع datetime بنجاح
+2026-09-07 11:35:28 - src.data.loader - INFO - تحميل البيانات من data\raw\sales_data.csv
+2026-09-07 11:35:28 - src.data.loader - INFO - تم تحميل 1000 سجل بنجاح
+2026-09-07 11:35:28 - src.data.cleaner - INFO - تم تحويل transaction_date إلى نوع datetime بنجاح
+2026-09-07 11:36:03 - src.analytics.kpis - INFO - تم حساب جميع مؤشرات الأداء بنجاح
+2026-09-07 11:38:29 - src.data.loader - INFO - تحميل البيانات من data\raw\sales_data.csv
+2026-09-07 11:38:29 - src.data.loader - INFO - تم تحميل 1000 سجل بنجاح
+2026-09-07 11:38:29 - src.data.cleaner - INFO - تم تحويل transaction_date إلى نوع datetime بنجاح
+2026-09-07 11:39:06 - src.data.loader - INFO - تحميل البيانات من data\raw\sales_data.csv
+2026-09-07 11:39:06 - src.data.loader - INFO - تم تحميل 1000 سجل بنجاح
+2026-09-07 11:39:06 - src.data.cleaner - INFO - تم تحويل transaction_date إلى نوع datetime بنجاح
+2026-09-07 11:39:29 - src.data.loader - INFO - تحميل البيانات من data\raw\sales_data.csv
+2026-09-07 11:39:29 - src.data.loader - INFO - تم تحميل 1000 سجل بنجاح
+2026-09-07 11:39:29 - src.data.cleaner - INFO - تم تحويل transaction_date إلى نوع datetime بنجاح
+2026-09-07 11:39:40 - src.data.loader - INFO - تحميل البيانات من data\raw\sales_data.csv
+2026-09-07 11:39:40 - src.data.loader - INFO - تم تحميل 1000 سجل بنجاح
+2026-09-07 11:39:40 - src.data.cleaner - INFO - تم تحويل transaction_date إلى نوع datetime بنجاح
+2026-09-07 11:39:41 - src.data.loader - INFO - تحميل البيانات من data\raw\sales_data.csv
+2026-09-07 11:39:41 - src.data.loader - INFO - تم تحميل 1000 سجل بنجاح
+2026-09-07 11:39:41 - src.data.cleaner - INFO - تم تحويل transaction_date إلى نوع datetime بنجاح
+2026-09-07 11:39:44 - src.analytics.kpis - INFO - تم حساب جميع مؤشرات الأداء بنجاح
+2026-09-07 11:55:55 - src.data.loader - INFO - تحميل البيانات من data\raw\sales_data.csv
+2026-09-07 11:55:55 - src.data.loader - INFO - تم تحميل 1000 سجل بنجاح
+2026-09-07 11:55:55 - src.data.cleaner - INFO - تم تحويل transaction_date إلى نوع datetime بنجاح
+2026-09-07 11:58:26 - src.data.loader - INFO - تحميل البيانات من data\raw\sales_data.csv
+2026-09-07 11:58:26 - src.data.loader - INFO - تم تحميل 1000 سجل بنجاح
+2026-09-07 11:58:26 - src.data.cleaner - INFO - تم تحويل transaction_date إلى نوع datetime بنجاح
+2026-09-07 11:58:55 - src.data.loader - INFO - تحميل البيانات من data\raw\sales_data.csv
+2026-09-07 11:58:55 - src.data.loader - INFO - تم تحميل 1000 سجل بنجاح
+2026-09-07 11:58:55 - src.data.cleaner - INFO - تم تحويل transaction_date إلى نوع datetime بنجاح
+2026-09-07 11:59:11 - src.data.loader - INFO - تحميل البيانات من data\raw\sales_data.csv
+2026-09-07 11:59:11 - src.data.loader - INFO - تم تحميل 1000 سجل بنجاح
+2026-09-07 11:59:11 - src.data.cleaner - INFO - تم تحويل transaction_date إلى نوع datetime بنجاح
+2026-09-07 11:59:58 - src.data.loader - INFO - تحميل البيانات من data\raw\sales_data.csv
+2026-09-07 11:59:58 - src.data.loader - INFO - تم تحميل 1000 سجل بنجاح
+2026-09-07 11:59:58 - src.data.cleaner - INFO - تم تحويل transaction_date إلى نوع datetime بنجاح
+2026-09-07 12:00:12 - src.data.loader - INFO - تحميل البيانات من data\raw\sales_data.csv
+2026-09-07 12:00:12 - src.data.loader - INFO - تم تحميل 1000 سجل بنجاح
+2026-09-07 12:00:12 - src.data.cleaner - INFO - تم تحويل transaction_date إلى نوع datetime بنجاح
+2026-09-07 12:08:58 - src.data.loader - INFO - تحميل البيانات من data\raw\sales_data.csv
+2026-09-07 12:08:58 - src.data.loader - INFO - تم تحميل 1000 سجل بنجاح
+2026-09-07 12:08:58 - src.data.cleaner - INFO - تم تحويل transaction_date إلى نوع datetime بنجاح
+2026-09-07 12:08:59 - src.data.loader - INFO - تحميل البيانات من data\raw\sales_data.csv
+2026-09-07 12:08:59 - src.data.loader - INFO - تم تحميل 1000 سجل بنجاح
+2026-09-07 12:08:59 - src.data.cleaner - INFO - تم تحويل transaction_date إلى نوع datetime بنجاح
+2026-09-07 12:09:05 - src.analytics.kpis - INFO - تم حساب جميع مؤشرات الأداء بنجاح
+2026-09-07 12:09:29 - src.features.rfm - INFO - تم حساب RFM لـ 198 عميل
+2026-09-07 12:09:29 - src.features.rfm - INFO - تم تعيين درجات RFM للعملاء
+2026-09-07 12:09:29 - src.features.rfm - INFO - تم تقسيم العملاء إلى 4 شرائح
+2026-09-07 12:09:45 - src.features.rfm - INFO - تم حساب RFM لـ 198 عميل
+2026-09-07 12:09:45 - src.features.rfm - INFO - تم تعيين درجات RFM للعملاء
+2026-09-07 12:09:45 - src.features.rfm - INFO - تم تقسيم العملاء إلى 4 شرائح
+2026-09-07 12:09:52 - src.features.rfm - INFO - تم حساب RFM لـ 198 عميل
+2026-09-07 12:09:52 - src.features.rfm - INFO - تم تعيين درجات RFM للعملاء
+2026-09-07 12:09:52 - src.features.rfm - INFO - تم تقسيم العملاء إلى 4 شرائح
+2026-09-07 12:09:52 - src.models.forecasting - INFO - تشغيل نموذج الانحدار الخطي...
+2026-09-07 12:09:52 - src.models.forecasting - INFO - تشغيل نموذج متعدد الحدود (degree=2)...
+2026-09-07 12:09:52 - src.models.forecasting - INFO - تشغيل نموذج متعدد الحدود (degree=3)...
+2026-09-07 12:09:54 - src.analytics.kpis - INFO - تم حساب جميع مؤشرات الأداء بنجاح
+2026-09-07 12:09:56 - src.features.rfm - INFO - تم حساب RFM لـ 198 عميل
+2026-09-07 12:09:56 - src.features.rfm - INFO - تم تعيين درجات RFM للعملاء
+2026-09-07 12:09:56 - src.features.rfm - INFO - تم تقسيم العملاء إلى 4 شرائح
+2026-09-07 12:09:57 - src.models.forecasting - INFO - تشغيل نموذج الانحدار الخطي...
+2026-09-07 12:09:57 - src.models.forecasting - INFO - تشغيل نموذج متعدد الحدود (degree=2)...
+2026-09-07 12:09:57 - src.models.forecasting - INFO - تشغيل نموذج متعدد الحدود (degree=3)...
+2026-09-07 12:10:03 - src.analytics.kpis - INFO - تم حساب جميع مؤشرات الأداء بنجاح
+2026-09-07 12:10:05 - src.features.rfm - INFO - تم حساب RFM لـ 198 عميل
+2026-09-07 12:10:05 - src.features.rfm - INFO - تم تعيين درجات RFM للعملاء
+2026-09-07 12:10:05 - src.features.rfm - INFO - تم تقسيم العملاء إلى 4 شرائح
+2026-09-07 12:10:07 - src.models.forecasting - INFO - تشغيل نموذج الانحدار الخطي...
+2026-09-07 12:10:07 - src.models.forecasting - INFO - تشغيل نموذج متعدد الحدود (degree=2)...
+2026-09-07 12:10:07 - src.models.forecasting - INFO - تشغيل نموذج متعدد الحدود (degree=3)...
+2026-09-07 12:25:08 - src.data.loader - INFO - تحميل البيانات من data\raw\sales_data.csv
+2026-09-07 12:25:08 - src.data.loader - INFO - تم تحميل 1000 سجل بنجاح
+2026-09-07 12:25:08 - src.data.cleaner - INFO - تم تحويل transaction_date إلى نوع datetime بنجاح
+2026-09-07 12:25:09 - src.data.loader - INFO - تحميل البيانات من data\raw\sales_data.csv
+2026-09-07 12:25:09 - src.data.loader - INFO - تم تحميل 1000 سجل بنجاح
+2026-09-07 12:25:09 - src.data.cleaner - INFO - تم تحويل transaction_date إلى نوع datetime بنجاح
+2026-09-07 12:25:42 - src.models.forecasting - INFO - تشغيل نموذج الانحدار الخطي...
+2026-09-07 12:25:42 - src.models.forecasting - INFO - تشغيل نموذج متعدد الحدود (degree=2)...
+2026-09-07 12:25:42 - src.models.forecasting - INFO - تشغيل نموذج متعدد الحدود (degree=3)...
+2026-09-07 12:25:44 - src.analytics.kpis - INFO - تم حساب جميع مؤشرات الأداء بنجاح
+2026-09-07 12:25:47 - src.features.rfm - INFO - تم حساب RFM لـ 198 عميل
+2026-09-07 12:25:47 - src.features.rfm - INFO - تم تعيين درجات RFM للعملاء
+2026-09-07 12:25:47 - src.features.rfm - INFO - تم تقسيم العملاء إلى 4 شرائح
+2026-09-07 12:25:53 - src.models.forecasting - INFO - تشغيل نموذج الانحدار الخطي...
+2026-09-07 12:25:53 - src.models.forecasting - INFO - تشغيل نموذج متعدد الحدود (degree=2)...
+2026-09-07 12:25:53 - src.models.forecasting - INFO - تشغيل نموذج متعدد الحدود (degree=3)...
+2026-09-07 12:25:55 - src.analytics.seasonality - INFO - ✅ تم تحليل الموسمية بنجاح

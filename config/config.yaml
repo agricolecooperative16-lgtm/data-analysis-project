@@ -1,0 +1,60 @@
+# إعدادات البيانات
+data:
+  raw_path: "data/raw/"
+  processed_path: "data/processed/"
+  external_path: "data/external/"
+  sales_file: "sales_data.csv"
+  customers_file: "customers_data.csv"
+  products_file: "products_data.csv"
+
+# إعدادات التحليل
+analysis:
+  date_column: "transaction_date"
+  customer_id: "customer_id"
+  product_id: "product_id"
+  quantity_column: "quantity"
+  price_column: "unit_price"
+  amount_column: "total_amount"
+  
+  # إعدادات RFM
+  rfm:
+    recency_weight: 0.4
+    frequency_weight: 0.3
+    monetary_weight: 0.3
+    segments:
+      vip: [4, 5]
+      loyal: [3, 4]
+      potential: [2, 3]
+      at_risk: [1, 2]
+      lost: [0, 1]
+
+# إعدادات النماذج
+models:
+  segmentation:
+    n_clusters: 4
+    random_state: 42
+    max_iter: 300
+    n_init: 10
+  
+  forecasting:
+    test_size: 0.2
+    seasonality_period: 12
+    models:
+      - "linear_regression"
+      - "arima"
+      - "prophet"
+
+# إعدادات التصور
+visualization:
+  figure_size: [12, 8]
+  color_palette: "Set2"
+  dpi: 100
+  save_figures: true
+  figure_format: "png"
+
+# إعدادات التسجيل
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  date_format: "%Y-%m-%d %H:%M:%S"
+  file: "logs/app.log"
