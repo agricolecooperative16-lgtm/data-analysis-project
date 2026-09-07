@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}التحليل الموسمي{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="section-title">📊 التحليل الموسمي</h2>
+        <p class="text-muted">اكتشاف الأنماط الموسمية في المبيعات وتحليل الاتجاهات</p>
+    </div>
+</div>
+
+<div class="row g-4" id="seasonal-stats">
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <div class="label">أفضل شهر</div>
+            <div class="value" id="s-best-month">-</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <div class="label">إجمالي المبيعات السنوية</div>
+            <div class="value" id="s-total">-</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <div class="label">متوسط المبيعات الشهرية</div>
+            <div class="value" id="s-avg">-</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <div class="label">أعلى مبيعات شهرية</div>
+            <div class="value" id="s-max">-</div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5>المبيعات الشهرية</h5>
+                <img id="seasonal-plot" src="" alt="Seasonal Plot" class="img-fluid">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5>📋 البيانات الشهرية</h5>
+                <div class="table-responsive">
+                    <table class="table table-striped" id="seasonal-table">
+                        <thead>
+                            <tr>
+                                <th>الشهر</th>
+                                <th>إجمالي المبيعات</th>
+                                <th>متوسط المبيعات</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    $.get('/api/seasonal', function(response) {
+        if (response.success) {
+            // تحديث الإحصائيات
+            $('#s-best-month').text(response.best_month);
+            $('#s-total').text(response.total_yearly.toFixed(2) + ' ريال');
+            $('#s-avg').text(response.avg_monthly.toFixed(2) + ' ريال');
+            $('#s-max').text(response.best_month_total.toFixed(2) + ' ريال');
+            
+            // عرض الرسم
+            $('#seasonal-plot').attr('src', 'data:image/png;base64,' + response.plot);
+            
+            // عرض جدول البيانات
+            let html = '';
+            const monthNames = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 
+                              'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+            response.total_by_month.forEach(row => {
+                const avg = response.avg_by_month.find(a => a.month === row.month);
+                html += `<tr>
+                    <td><strong>${monthNames[row.month - 1]}</strong></td>
+                    <td>${row.total_amount.toFixed(2)} ريال</td>
+                    <td>${avg ? avg.avg_amount.toFixed(2) : '-'} ريال</td>
+                </tr>`;
+            });
+            $('#seasonal-table tbody').html(html);
+        } else {
+            alert('خطأ في تحميل البيانات الموسمية: ' + response.error);
+        }
+    });
+});
+</script>
+{% endblock %}

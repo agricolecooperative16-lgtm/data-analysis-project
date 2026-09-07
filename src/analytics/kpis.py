@@ -1,153 +1,115 @@
-"""
-حساب مؤشرات الأداء الرئيسية (KPIs)
-"""
-
 import pandas as pd
 import numpy as np
-from typing import Dict, Union, Optional
-from ..utils.logger import setup_logger
 
-logger = setup_logger(__name__)
-
-
-class KPIAnalyzer:
-    """فئة لحساب مؤشرات الأداء"""
+def calculate_retention_rate(df: pd.DataFrame, 
+                             customer_col: str, 
+                             date_col: str,
+                             periods: list = None) -> pd.DataFrame:
+    """
+    حساب معدل الاحتفاظ بالعملاء بشكل صحيح
     
-    @staticmethod
-    def calculate_revenue(df: pd.DataFrame, amount_col: str) -> float:
-        """
-        حساب إجمالي الإيرادات
-        
-        Args:
-            df: DataFrame مع بيانات المبيعات
-            amount_col: اسم عمود المبلغ
-        
-        Returns:
-            float: إجمالي الإيرادات
-        """
-        return df[amount_col].sum()
+    Args:
+        df: DataFrame مع بيانات العملاء
+        customer_col: اسم عمود معرف العميل
+        date_col: اسم عمود التاريخ
+        periods: قائمة الفترات (مثل ['month', 'week'])
     
-    @staticmethod
-    def calculate_average_basket(df: pd.DataFrame, 
-                                 amount_col: str,
-                                 transaction_id: str) -> float:
-        """
-        حساب متوسط قيمة السلة
-        
-        Args:
-            df: DataFrame مع بيانات المبيعات
-            amount_col: اسم عمود المبلغ
-            transaction_id: اسم عمود معرف المعاملة
-        
-        Returns:
-            float: متوسط قيمة السلة
-        """
-        total_revenue = df[amount_col].sum()
-        total_transactions = df[transaction_id].nunique()
-        
-        if total_transactions == 0:
-            return 0.0
-        
-        return total_revenue / total_transactions
+    Returns:
+        pd.DataFrame: جدول الاحتفاظ لكل فترة
+    """
+    if periods is None:
+        periods = ['month']
     
-    @staticmethod
-    def calculate_customer_lifetime_value(df: pd.DataFrame,
-                                         customer_id: str,
-                                         amount_col: str) -> pd.DataFrame:
-        """
-        حساب قيمة العميل الدائمة (CLV)
-        
-        Args:
-            df: DataFrame مع بيانات المبيعات
-            customer_id: اسم عمود معرف العميل
-            amount_col: اسم عمود المبلغ
-        
-        Returns:
-            DataFrame مع CLV لكل عميل
-        """
-        clv = df.groupby(customer_id)[amount_col].sum().reset_index()
-        clv.columns = [customer_id, 'clv']
-        return clv
+    df = df.copy()
+    df[date_col] = pd.to_datetime(df[date_col])
     
-    @staticmethod
-    def calculate_retention_rate(df: pd.DataFrame,
-                                 customer_id: str,
-                                 date_col: str,
-                                 period: str = 'M') -> float:
-        """
-        حساب معدل الاحتفاظ بالعملاء
-        
-        Args:
-            df: DataFrame مع بيانات المبيعات
-            customer_id: اسم عمود معرف العميل
-            date_col: اسم عمود التاريخ
-            period: الفترة الزمنية ('D', 'W', 'M', 'Q', 'Y')
-        
-        Returns:
-            float: معدل الاحتفاظ
-        """
-        # التأكد من أن التاريخ من نوع datetime
-        if not pd.api.types.is_datetime64_any_dtype(df[date_col]):
-            df = df.copy()
-            df[date_col] = pd.to_datetime(df[date_col])
-        
+    results = {}
+    
+    for period in periods:
         # إضافة عمود الفترة
-        df['period'] = df[date_col].dt.to_period(period)
-        
-        # حساب العملاء النشطين في كل فترة
-        active_customers = df.groupby('period')[customer_id].nunique()
-        
-        # معدل الاحتفاظ
-        retention_rates = active_customers.pct_change().fillna(0)
-        
-        # متوسط معدل الاحتفاظ
-        avg_retention = retention_rates.mean()
-        
-        return avg_retention
-    
-    @staticmethod
-    def calculate_all_kpis(df: pd.DataFrame,
-                          customer_id: str,
-                          transaction_id: str,
-                          date_col: str,
-                          amount_col: str) -> Dict[str, Union[float, int, pd.DataFrame]]:
-        """
-        حساب جميع مؤشرات الأداء
-        
-        Returns:
-            قاموس يحتوي على جميع الـ KPIs
-        """
-        kpis = {}
-        
-        # الإيرادات
-        kpis['total_revenue'] = KPIAnalyzer.calculate_revenue(df, amount_col)
-        
-        # متوسط السلة
-        kpis['average_basket'] = KPIAnalyzer.calculate_average_basket(
-            df, amount_col, transaction_id
-        )
-        
-        # عدد العملاء الفريدين
-        kpis['unique_customers'] = df[customer_id].nunique()
-        
-        # عدد المعاملات
-        kpis['total_transactions'] = df[transaction_id].nunique()
-        
-        # متوسط قيمة العميل
-        if kpis['unique_customers'] > 0:
-            kpis['avg_customer_value'] = kpis['total_revenue'] / kpis['unique_customers']
+        if period == 'month':
+            df['period'] = df[date_col].dt.to_period('M')
+        elif period == 'week':
+            df['period'] = df[date_col].dt.to_period('W')
+        elif period == 'quarter':
+            df['period'] = df[date_col].dt.to_period('Q')
         else:
-            kpis['avg_customer_value'] = 0
+            raise ValueError(f"فترة غير مدعومة: {period}")
         
-        # قيمة العميل الدائمة
-        kpis['customer_lifetime_value'] = KPIAnalyzer.calculate_customer_lifetime_value(
-            df, customer_id, amount_col
-        )
+        # حساب العملاء النشطين لكل فترة
+        active_customers = df.groupby('period')[customer_col].nunique()
         
-        # معدل الاحتفاظ
-        kpis['retention_rate'] = KPIAnalyzer.calculate_retention_rate(
-            df, customer_id, date_col
-        )
+        # حساب الاحتفاظ (نسبة العملاء الذين عادوا)
+        periods_sorted = sorted(active_customers.index)
+        retention_matrix = pd.DataFrame(index=periods_sorted, columns=periods_sorted)
         
-        logger.info("تم حساب جميع مؤشرات الأداء بنجاح")
-        return kpis
+        for i, p1 in enumerate(periods_sorted):
+            for j, p2 in enumerate(periods_sorted):
+                if i <= j:  # فقط الفترات الحالية والمستقبلية
+                    # العملاء في p1 الذين عادوا في p2
+                    customers_p1 = set(df[df['period'] == p1][customer_col].unique())
+                    customers_p2 = set(df[df['period'] == p2][customer_col].unique())
+                    
+                    if len(customers_p1) > 0:
+                        retention = len(customers_p1.intersection(customers_p2)) / len(customers_p1)
+                    else:
+                        retention = 0
+                    
+                    retention_matrix.loc[p1, p2] = retention
+        
+        results[period] = retention_matrix
+    
+    return results if len(periods) > 1 else results[periods[0]]
+
+
+def calculate_retention_rate_by_cohort(df: pd.DataFrame,
+                                        customer_col: str,
+                                        date_col: str,
+                                        order_col: str = None) -> pd.DataFrame:
+    """
+    حساب معدل الاحتفاظ حسب المجموعات (Cohort Analysis)
+    
+    Args:
+        df: DataFrame مع بيانات العملاء
+        customer_col: اسم عمود معرف العميل
+        date_col: اسم عمود التاريخ
+        order_col: اسم عمود رقم الطلب (اختياري)
+    
+    Returns:
+        pd.DataFrame: جدول الاحتفاظ حسب المجموعات
+    """
+    df = df.copy()
+    df[date_col] = pd.to_datetime(df[date_col])
+    
+    # تحديد تاريخ أول عملية لكل عميل
+    first_purchase = df.groupby(customer_col)[date_col].min().reset_index()
+    first_purchase.columns = [customer_col, 'first_purchase']
+    
+    # دمج مع البيانات الأصلية
+    df = df.merge(first_purchase, on=customer_col)
+    
+    # حساب الفرق بالأشهر
+    df['months_diff'] = (df[date_col].dt.year - df['first_purchase'].dt.year) * 12 + \
+                        (df[date_col].dt.month - df['first_purchase'].dt.month)
+    
+    # إنشاء جدول المجموعات
+    cohort_data = df.groupby([customer_col, 'months_diff']).size().reset_index(name='count')
+    
+    # حساب عدد العملاء لكل مجموعة
+    cohort_sizes = df.groupby(customer_col)['first_purchase'].min().reset_index()
+    cohort_sizes['cohort'] = cohort_sizes['first_purchase'].dt.to_period('M')
+    
+    # حساب الاحتفاظ
+    retention = cohort_data.pivot_table(index=customer_col, 
+                                        columns='months_diff', 
+                                        values='count', 
+                                        fill_value=0)
+    
+    # إضافة معلومات المجموعة
+    retention = retention.merge(cohort_sizes[[customer_col, 'cohort']], 
+                                on=customer_col)
+    
+    # حساب النسب المئوية
+    retention_pct = retention.groupby('cohort').mean() * 100
+    
+    return retention_pct

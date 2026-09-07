@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}التنبؤ بالمبيعات{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="section-title">📈 التنبؤ بالمبيعات</h2>
+        <p class="text-muted">توقع المبيعات المستقبلية باستخدام نماذج تحليلية</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5>⚙️ إعدادات التنبؤ</h5>
+                <div class="mb-3">
+                    <label class="form-label">عدد أيام التنبؤ</label>
+                    <input type="range" class="form-range" id="forecast-days" min="7" max="60" value="14">
+                    <div class="d-flex justify-content-between">
+                        <span>7</span>
+                        <span id="days-label">14</span>
+                        <span>60</span>
+                    </div>
+                </div>
+                <button class="btn btn-primary w-100" id="forecast-btn">
+                    <i class="fas fa-play"></i> تشغيل التنبؤ
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <h5>نتائج التنبؤ</h5>
+                <div id="forecast-results">
+                    <div class="row g-3" id="forecast-stats">
+                        <div class="col-4">
+                            <div class="stat-card">
+                                <div class="label">عدد الأيام</div>
+                                <div class="value" id="f-days">-</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="stat-card">
+                                <div class="label">متوسط التنبؤ</div>
+                                <div class="value" id="f-avg">-</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="stat-card">
+                                <div class="label">إجمالي التنبؤ</div>
+                                <div class="value" id="f-total">-</div>
+                            </div>
+                        </div>
+                    </div>
+                    <img id="forecast-plot" src="" alt="Forecast Plot" class="img-fluid mt-3">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // تحديث قيمة الأيام
+    $('#forecast-days').on('input', function() {
+        $('#days-label').text($(this).val());
+    });
+    
+    // تشغيل التنبؤ
+    $('#forecast-btn').click(function() {
+        const days = $('#forecast-days').val();
+        $('#forecast-results').html('<div class="loading"><i class="fas fa-spinner spinner fa-2x"></i><p>جاري التنبؤ...</p></div>');
+        
+        $.get('/api/forecast', {days: days}, function(response) {
+            if (response.success) {
+                // عرض الإحصائيات
+                let html = `
+                    <div class="row g-3" id="forecast-stats">
+                        <div class="col-4">
+                            <div class="stat-card">
+                                <div class="label">عدد الأيام</div>
+                                <div class="value" id="f-days">${response.days}</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="stat-card">
+                                <div class="label">متوسط التنبؤ</div>
+                                <div class="value" id="f-avg">${response.avg_forecast.toFixed(2)}</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="stat-card">
+                                <div class="label">إجمالي التنبؤ</div>
+                                <div class="value" id="f-total">${response.total_forecast.toFixed(2)}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <img id="forecast-plot" src="data:image/png;base64,${response.plot}" alt="Forecast Plot" class="img-fluid mt-3">
+                `;
+                $('#forecast-results').html(html);
+            } else {
+                $('#forecast-results').html(`<div class="alert alert-danger">خطأ: ${response.error}</div>`);
+            }
+        });
+    });
+    
+    // تشغيل تلقائي عند التحميل
+    $('#forecast-btn').click();
+});
+</script>
+{% endblock %}

@@ -1,152 +1,125 @@
-"""
-تحليل RFM (Recency, Frequency, Monetary)
-"""
-
 import pandas as pd
 import numpy as np
-from typing import Dict, Tuple, List
-from ..utils.logger import setup_logger
+from datetime import datetime, timedelta
 
-logger = setup_logger(__name__)
+def calculate_clv(df: pd.DataFrame,
+                  customer_col: str,
+                  revenue_col: str,
+                  date_col: str,
+                  method: str = 'historical') -> pd.DataFrame:
+    """
+    حساب القيمة الدائمة للعميل (CLV) باستخدام المنهجية الصحيحة
+    
+    Args:
+        df: DataFrame مع بيانات العملاء
+        customer_col: اسم عمود معرف العميل
+        revenue_col: اسم عمود الإيرادات
+        date_col: اسم عمود التاريخ
+        method: طريقة الحساب ('historical', 'predictive', 'simple')
+    
+    Returns:
+        pd.DataFrame: CLV لكل عميل
+    """
+    df = df.copy()
+    df[date_col] = pd.to_datetime(df[date_col])
+    
+    if method == 'historical':
+        # الطريقة التاريخية: إجمالي الإيرادات حتى الآن
+        clv = df.groupby(customer_col)[revenue_col].sum().reset_index()
+        clv.columns = [customer_col, 'clv_historical']
+        clv['clv_method'] = 'historical'
+        
+    elif method == 'simple':
+        # الطريقة المبسطة: متوسط القيمة × عدد المعاملات
+        customer_stats = df.groupby(customer_col).agg({
+            revenue_col: ['mean', 'sum', 'count'],
+            date_col: ['min', 'max']
+        })
+        
+        # حساب العمر الافتراضي للعميل
+        customer_stats[('date_col', 'lifetime_days')] = (
+            customer_stats[('date_col', 'max')] - 
+            customer_stats[('date_col', 'min')]
+        ).dt.days
+        
+        # CLV = متوسط الإيرادات × عدد المعاملات
+        clv = pd.DataFrame({
+            customer_col: customer_stats.index,
+            'avg_order_value': customer_stats[(revenue_col, 'mean')].fillna(0),
+            'purchase_frequency': customer_stats[(revenue_col, 'count')].fillna(0),
+            'lifetime_days': customer_stats[('date_col', 'lifetime_days')].fillna(0),
+            'clv_simple': customer_stats[(revenue_col, 'mean')].fillna(0) * 
+                         customer_stats[(revenue_col, 'count')].fillna(0)
+        })
+        clv['clv_method'] = 'simple'
+        
+    elif method == 'predictive':
+        # الطريقة التنبؤية (نموذج مبسط)
+        # CLV = (متوسط قيمة الطلب × عدد الطلبات في السنة) × متوسط عمر العميل
+        
+        today = datetime.now()
+        
+        customer_stats = df.groupby(customer_col).agg({
+            revenue_col: ['mean', 'sum', 'count'],
+            date_col: ['min', 'max']
+        })
+        
+        # حساب متوسط عمر العميل (بالسنوات)
+        customer_stats[('date_col', 'lifetime_years')] = (
+            (customer_stats[('date_col', 'max')] - 
+             customer_stats[('date_col', 'min')]).dt.days / 365.25
+        )
+        
+        # حساب عدد المعاملات في السنة
+        customer_stats[('date_col', 'years')] = (
+            (today - customer_stats[('date_col', 'min')]).dt.days / 365.25
+        )
+        
+        # تجنب القسمة على صفر
+        years = customer_stats[('date_col', 'years')].replace(0, 1)
+        annual_transactions = customer_stats[(revenue_col, 'count')] / years
+        
+        # CLV التنبؤي
+        clv = pd.DataFrame({
+            customer_col: customer_stats.index,
+            'avg_order_value': customer_stats[(revenue_col, 'mean')].fillna(0),
+            'annual_transactions': annual_transactions.fillna(0),
+            'avg_customer_lifetime_years': customer_stats[('date_col', 'lifetime_years')].fillna(0),
+            'clv_predictive': customer_stats[(revenue_col, 'mean')].fillna(0) * 
+                             annual_transactions.fillna(0) * 
+                             customer_stats[('date_col', 'lifetime_years')].fillna(1)
+        })
+        clv['clv_method'] = 'predictive'
+    
+    else:
+        raise ValueError(f"طريقة غير مدعومة: {method}. استخدم 'historical', 'simple', أو 'predictive'")
+    
+    return clv
 
 
-class RFMAnalyzer:
-    """فئة لتحليل RFM"""
+def segment_customers_by_clv(clv_df: pd.DataFrame,
+                             clv_col: str,
+                             n_segments: int = 4) -> pd.DataFrame:
+    """
+    تقسيم العملاء حسب CLV
     
-    def __init__(self, recency_weight: float = 0.4,
-                 frequency_weight: float = 0.3,
-                 monetary_weight: float = 0.3):
-        """
-        تهيئة محلل RFM
-        
-        Args:
-            recency_weight: وزن معامل الحداثة
-            frequency_weight: وزن معامل التكرار
-            monetary_weight: وزن معامل القيمة
-        """
-        self.recency_weight = recency_weight
-        self.frequency_weight = frequency_weight
-        self.monetary_weight = monetary_weight
+    Args:
+        clv_df: DataFrame مع CLV لكل عميل
+        clv_col: اسم عمود CLV
+        n_segments: عدد الشرائح
     
-    def calculate_rfm(self, df: pd.DataFrame, 
-                     customer_id: str,
-                     transaction_date: str,
-                     amount_col: str) -> pd.DataFrame:
-        """
-        حساب درجات RFM للعملاء
-        """
-        # التحقق من وجود الأعمدة
-        required_cols = [customer_id, transaction_date, amount_col]
-        missing_cols = [col for col in required_cols if col not in df.columns]
-        
-        if missing_cols:
-            raise ValueError(f"الأعمدة التالية مفقودة: {missing_cols}")
-        
-        # نسخ البيانات
-        df_copy = df.copy()
-        
-        # التأكد من أن التاريخ من نوع datetime
-        if not pd.api.types.is_datetime64_any_dtype(df_copy[transaction_date]):
-            df_copy[transaction_date] = pd.to_datetime(df_copy[transaction_date])
-        
-        # أحدث تاريخ
-        max_date = df_copy[transaction_date].max()
-        
-        # حساب RFM
-        rfm = df_copy.groupby(customer_id).agg({
-            transaction_date: lambda x: (max_date - x.max()).days,
-            amount_col: ['count', 'sum']
-        }).reset_index()
-        
-        # إعادة تسمية الأعمدة
-        rfm.columns = [customer_id, 'recency', 'frequency', 'monetary']
-        
-        logger.info(f"تم حساب RFM لـ {len(rfm)} عميل")
-        return rfm
+    Returns:
+        pd.DataFrame: العملاء مع تصنيف الشريحة
+    """
+    df = clv_df.copy()
     
-    def assign_scores(self, rfm_df: pd.DataFrame) -> pd.DataFrame:
-        """
-        تعيين درجات RFM (من 1 إلى 5)
-        """
-        df = rfm_df.copy()
-        
-        # التأكد من عدم وجود قيم صفرية أو سالبة
-        df['recency'] = df['recency'].clip(lower=0)
-        df['frequency'] = df['frequency'].clip(lower=0)
-        df['monetary'] = df['monetary'].clip(lower=0)
-        
-        # تعيين الدرجات حسب الترتيب
-        try:
-            df['r_score'] = pd.qcut(df['recency'].rank(method='first'), 
-                                   5, labels=[5, 4, 3, 2, 1])
-            df['f_score'] = pd.qcut(df['frequency'].rank(method='first'), 
-                                   5, labels=[1, 2, 3, 4, 5])
-            df['m_score'] = pd.qcut(df['monetary'].rank(method='first'), 
-                                   5, labels=[1, 2, 3, 4, 5])
-        except ValueError as e:
-            logger.warning(f"خطأ في تقسيم الدرجات: {e}. استخدام طريقة بديلة.")
-            # طريقة بديلة باستخدام النسب المئوية
-            df['r_score'] = pd.cut(df['recency'], 
-                                  bins=5, 
-                                  labels=[5, 4, 3, 2, 1])
-            df['f_score'] = pd.cut(df['frequency'], 
-                                  bins=5, 
-                                  labels=[1, 2, 3, 4, 5])
-            df['m_score'] = pd.cut(df['monetary'], 
-                                  bins=5, 
-                                  labels=[1, 2, 3, 4, 5])
-        
-        # تحويل إلى numeric
-        df['r_score'] = df['r_score'].astype(int)
-        df['f_score'] = df['f_score'].astype(int)
-        df['m_score'] = df['m_score'].astype(int)
-        
-        # حساب الدرجة النهائية
-        df['rfm_score'] = (self.recency_weight * df['r_score'] +
-                          self.frequency_weight * df['f_score'] +
-                          self.monetary_weight * df['m_score'])
-        
-        logger.info("تم تعيين درجات RFM للعملاء")
-        return df
+    # استخدام التقسيم بناءً على الربعيات
+    labels = ['منخفض', 'متوسط', 'مرتفع', 'VIP']
+    if n_segments > len(labels):
+        labels = [f'شريحة {i+1}' for i in range(n_segments)]
     
-    def segment_customers(self, rfm_scores: pd.DataFrame, 
-                         segments: Dict[str, List[int]]) -> pd.DataFrame:
-        """
-        تقسيم العملاء إلى شرائح
-        """
-        df = rfm_scores.copy()
-        
-        def get_segment(score: float) -> str:
-            for segment, range_score in segments.items():
-                min_score, max_score = range_score
-                if min_score <= score <= max_score:
-                    return segment
-            return 'other'
-        
-        df['segment'] = df['rfm_score'].apply(get_segment)
-        
-        logger.info(f"تم تقسيم العملاء إلى {len(df['segment'].unique())} شرائح")
-        return df
+    df['clv_segment'] = pd.qcut(df[clv_col], 
+                                q=n_segments, 
+                                labels=labels[:n_segments])
     
-    def analyze_rfm(self, df: pd.DataFrame,
-                   customer_id: str,
-                   transaction_date: str,
-                   amount_col: str,
-                   segments: Dict[str, List[int]]) -> Dict[str, pd.DataFrame]:
-        """
-        تحليل RFM كامل
-        """
-        # حساب RFM
-        rfm_df = self.calculate_rfm(df, customer_id, transaction_date, amount_col)
-        
-        # تعيين الدرجات
-        rfm_scores = self.assign_scores(rfm_df)
-        
-        # تقسيم العملاء
-        rfm_segments = self.segment_customers(rfm_scores, segments)
-        
-        return {
-            'rfm_df': rfm_df,
-            'rfm_scores': rfm_scores,
-            'rfm_segments': rfm_segments
-        }
+    return df

@@ -1,0 +1,61 @@
+import pandas as pd
+import numpy as np
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+
+def segment_customers_rfm(df: pd.DataFrame,
+                          rfm_cols: dict,
+                          n_segments: int = 4) -> pd.DataFrame:
+    """
+    تقسيم العملاء باستخدام RFM
+    
+    Args:
+        df: DataFrame مع بيانات RFM
+        rfm_cols: قاموس بأسماء الأعمدة {'recency': '', 'frequency': '', 'monetary': ''}
+        n_segments: عدد الشرائح
+    
+    Returns:
+        pd.DataFrame: العملاء مع التقسيم
+    """
+    df = df.copy()
+    
+    # تطبيع البيانات
+    rfm_data = df[[rfm_cols['recency'], rfm_cols['frequency'], rfm_cols['monetary']]]
+    scaler = StandardScaler()
+    rfm_scaled = scaler.fit_transform(rfm_data)
+    
+    # تطبيق K-Means
+    kmeans = KMeans(n_clusters=n_segments, random_state=42)
+    df['segment'] = kmeans.fit_predict(rfm_scaled)
+    
+    # تسمية الشرائح حسب القيم
+    segment_stats = df.groupby('segment').agg({
+        rfm_cols['recency']: 'mean',
+        rfm_cols['frequency']: 'mean',
+        rfm_cols['monetary']: 'mean'
+    })
+    
+    # تحديد أسماء الشرائح
+    segment_names = []
+    for idx in df['segment'].unique():
+        recency = segment_stats.loc[idx, rfm_cols['recency']]
+        frequency = segment_stats.loc[idx, rfm_cols['frequency']]
+        monetary = segment_stats.loc[idx, rfm_cols['monetary']]
+        
+        if recency < segment_stats[rfm_cols['recency']].median():
+            if frequency > segment_stats[rfm_cols['frequency']].median():
+                name = 'VIP'
+            else:
+                name = 'جديد'
+        else:
+            if frequency > segment_stats[rfm_cols['frequency']].median():
+                name = 'نشط'
+            else:
+                name = 'خطر'
+        segment_names.append(name)
+    
+    # تعيين الأسماء
+    segment_map = dict(zip(df['segment'].unique(), segment_names))
+    df['segment_name'] = df['segment'].map(segment_map)
+    
+    return df

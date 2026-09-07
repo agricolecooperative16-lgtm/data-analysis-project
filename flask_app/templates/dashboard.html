@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block title %}لوحة التحكم{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="section-title">📊 لوحة التحكم</h2>
+        <p class="text-muted">نظرة عامة على أداء المبيعات والعملاء</p>
+    </div>
+</div>
+
+<!-- البطاقات الإحصائية -->
+<div class="row g-4">
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <div class="icon text-primary"><i class="fas fa-shopping-cart fa-2x"></i></div>
+            <div class="value" id="d-total-orders">-</div>
+            <div class="label">إجمالي الطلبات</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <div class="icon text-success"><i class="fas fa-users fa-2x"></i></div>
+            <div class="value" id="d-total-customers">-</div>
+            <div class="label">عدد العملاء</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <div class="icon text-warning"><i class="fas fa-money-bill-wave fa-2x"></i></div>
+            <div class="value" id="d-total-revenue">-</div>
+            <div class="label">إجمالي الإيرادات</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <div class="icon text-danger"><i class="fas fa-chart-bar fa-2x"></i></div>
+            <div class="value" id="d-avg-order">-</div>
+            <div class="label">متوسط قيمة الطلب</div>
+        </div>
+    </div>
+</div>
+
+<!-- الرسوم البيانية -->
+<div class="row mt-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <h5>📈 المبيعات اليومية</h5>
+                <canvas id="salesChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5>🧑‍💼 توزيع العملاء</h5>
+                <canvas id="segmentChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- معلومات إضافية -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5>🏙️ توزيع العملاء حسب المدينة</h5>
+                <div id="city-distribution">
+                    <div class="text-muted text-center">جاري التحميل...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5>📦 توزيع الطلبات حسب الفئة</h5>
+                <div id="category-distribution">
+                    <div class="text-muted text-center">جاري التحميل...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // تحميل الإحصائيات العامة
+    $.get('/api/stats', function(response) {
+        if (response.success) {
+            const stats = response.stats;
+            $('#d-total-orders').text(stats.total_orders.toLocaleString());
+            $('#d-total-customers').text(stats.total_customers.toLocaleString());
+            $('#d-total-revenue').text(stats.total_revenue.toLocaleString());
+            $('#d-avg-order').text(stats.avg_order_value.toFixed(2));
+        }
+    });
+    
+    // تحميل بيانات RFM للرسم البياني
+    $.get('/api/rfm', function(response) {
+        if (response.success) {
+            // رسم توزيع الشرائح
+            const ctx2 = document.getElementById('segmentChart').getContext('2d');
+            const segments = response.segment_distribution || {};
+            const labels = Object.keys(segments);
+            const data = Object.values(segments);
+            const colors = ['#2ecc71', '#3498db', '#f1c40f', '#e74c3c', '#95a5a6'];
+            
+            if (labels.length > 0) {
+                new Chart(ctx2, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: colors.slice(0, labels.length)
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { font: { size: 12 } } }
+                        }
+                    }
+                });
+            }
+        }
+    });
+    
+    // رسم المبيعات اليومية (بيانات من API)
+    $.get('/api/seasonal', function(response) {
+        if (response.success && response.total_by_month) {
+            const months = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 
+                           'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+            const data = response.total_by_month;
+            const labels = data.map(d => months[d.month - 1]);
+            const values = data.map(d => d.total_amount);
+            
+            const ctx = document.getElementById('salesChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'المبيعات الشهرية',
+                        data: values,
+                        backgroundColor: 'rgba(102, 126, 234, 0.7)',
+                        borderColor: '#667eea',
+                        borderWidth: 2,
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { callback: function(value) { return value.toLocaleString(); } }
+                        }
+                    }
+                }
+            });
+        }
+    });
+    
+    // تحميل توزيع المدن
+    $.get('/api/customers', function(response) {
+        if (response.success) {
+            const customers = response.customers || [];
+            const cities = {};
+            customers.forEach(c => {
+                const city = c.city || 'غير محدد';
+                cities[city] = (cities[city] || 0) + 1;
+            });
+            
+            let html = '';
+            const sorted = Object.entries(cities).sort((a, b) => b[1] - a[1]);
+            sorted.forEach(([city, count]) => {
+                const percentage = ((count / customers.length) * 100).toFixed(1);
+                html += `
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span>${city}</span>
+                        <span>${count} (${percentage}%)</span>
+                    </div>
+                    <div class="progress mb-2" style="height:6px;">
+                        <div class="progress-bar bg-info" role="progressbar" style="width:${percentage}%;"></div>
+                    </div>
+                `;
+            });
+            $('#city-distribution').html(html || '<div class="text-muted">لا توجد بيانات</div>');
+        }
+    });
+    
+    // تحميل توزيع الفئات
+    $.get('/api/data', function(response) {
+        if (response.success) {
+            const data = response.data || [];
+            const categories = {};
+            data.forEach(d => {
+                const cat = d.category || 'غير محدد';
+                categories[cat] = (categories[cat] || 0) + 1;
+            });
+            
+            let html = '';
+            const sorted = Object.entries(categories).sort((a, b) => b[1] - a[1]);
+            const colors = ['#3498db', '#2ecc71', '#f1c40f', '#e74c3c', '#9b59b6', '#1abc9c', '#e67e22'];
+            sorted.forEach(([cat, count], index) => {
+                const percentage = ((count / data.length) * 100).toFixed(1);
+                const color = colors[index % colors.length];
+                html += `
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span>${cat}</span>
+                        <span>${count} (${percentage}%)</span>
+                    </div>
+                    <div class="progress mb-2" style="height:6px;">
+                        <div class="progress-bar" role="progressbar" style="width:${percentage}%;background:${color};"></div>
+                    </div>
+                `;
+            });
+            $('#category-distribution').html(html || '<div class="text-muted">لا توجد بيانات</div>');
+        }
+    });
+});
+</script>
+{% endblock %}

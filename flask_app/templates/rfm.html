@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}تحليل RFM{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="section-title">📊 تحليل RFM</h2>
+        <p class="text-muted">تقسيم العملاء حسب السلوك الشرائي (حداثة الشراء - تكرار الشراء - القيمة المالية)</p>
+    </div>
+</div>
+
+<!-- إحصائيات سريعة -->
+<div class="row g-4" id="rfm-stats">
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <div class="icon text-primary"><i class="fas fa-users"></i></div>
+            <div class="label">إجمالي العملاء</div>
+            <div class="value" id="rfm-total">-</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <div class="icon text-success"><i class="fas fa-clock"></i></div>
+            <div class="label">متوسط Recency</div>
+            <div class="value" id="rfm-recency">-</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <div class="icon text-warning"><i class="fas fa-shopping-cart"></i></div>
+            <div class="label">متوسط Frequency</div>
+            <div class="value" id="rfm-frequency">-</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <div class="icon text-danger"><i class="fas fa-money-bill-wave"></i></div>
+            <div class="label">متوسط Monetary</div>
+            <div class="value" id="rfm-monetary">-</div>
+        </div>
+    </div>
+</div>
+
+<!-- الرسوم البيانية -->
+<div class="row mt-4">
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-body">
+                <h5>توزيع شرائح العملاء</h5>
+                <div id="rfm-plot-container">
+                    <img id="rfm-plot" src="" alt="RFM Plot" class="img-fluid" style="width:100%;">
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-body">
+                <h5>توزيع الشرائح</h5>
+                <div id="segment-distribution">
+                    <div class="text-muted text-center">جاري التحميل...</div>
+                </div>
+                <hr>
+                <h6>🔑 معاني الشرائح:</h6>
+                <div class="small">
+                    <div><span class="badge" style="background:#2ecc71;">VIP</span> أفضل العملاء</div>
+                    <div><span class="badge" style="background:#3498db;">نشط</span> عملاء متفاعلون</div>
+                    <div><span class="badge" style="background:#f1c40f;">مخلص</span> عملاء مخلصون</div>
+                    <div><span class="badge" style="background:#e74c3c;">خطر</span> عملاء قد يتركونا</div>
+                    <div><span class="badge" style="background:#95a5a6;">متوسط</span> عملاء متوسطو القيمة</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- جدول البيانات -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5>📋 بيانات RFM للعملاء</h5>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover" id="rfm-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>معرف العميل</th>
+                                <th>Recency (أيام)</th>
+                                <th>Frequency (طلبات)</th>
+                                <th>Monetary (ريال)</th>
+                                <th>R Score</th>
+                                <th>F Score</th>
+                                <th>M Score</th>
+                                <th>RFM Score</th>
+                                <th>الشريحة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="10" class="text-center text-muted">جاري تحميل البيانات...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // تحميل بيانات RFM
+    $.get('/api/rfm', function(response) {
+        if (response.success) {
+            // تحديث الإحصائيات
+            $('#rfm-total').text(response.total_customers);
+            $('#rfm-recency').text(response.avg_recency.toFixed(0) + ' يوم');
+            $('#rfm-frequency').text(response.avg_frequency.toFixed(1));
+            $('#rfm-monetary').text(response.avg_monetary.toFixed(2));
+            
+            // عرض الرسم البياني
+            $('#rfm-plot').attr('src', 'data:image/png;base64,' + response.plot);
+            
+            // عرض توزيع الشرائح
+            const colors = {
+                'VIP': '#2ecc71', 
+                'نشط': '#3498db', 
+                'مخلص': '#f1c40f', 
+                'خطر': '#e74c3c', 
+                'متوسط': '#95a5a6'
+            };
+            
+            let html = '';
+            for (const [segment, count] of Object.entries(response.segment_distribution)) {
+                const color = colors[segment] || '#6c757d';
+                const percentage = ((count / response.total_customers) * 100).toFixed(1);
+                html += `
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>
+                            <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${color};margin-left:10px;"></span>
+                            <strong>${segment}</strong>
+                        </span>
+                        <span>
+                            <span class="badge bg-secondary">${count}</span>
+                            <span class="text-muted small">(${percentage}%)</span>
+                        </span>
+                    </div>
+                    <div class="progress mb-2" style="height:6px;">
+                        <div class="progress-bar" role="progressbar" style="width:${percentage}%;background:${color};" aria-valuenow="${percentage}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                `;
+            }
+            $('#segment-distribution').html(html);
+            
+            // عرض جدول البيانات
+            let tableHtml = '';
+            response.rfm.slice(0, 30).forEach((row, index) => {
+                const color = colors[row.segment] || '#6c757d';
+                tableHtml += `<tr>
+                    <td>${index + 1}</td>
+                    <td><code>${row.customer_id}</code></td>
+                    <td>${row.recency}</td>
+                    <td>${row.frequency}</td>
+                    <td>${row.monetary.toFixed(2)}</td>
+                    <td><span class="badge bg-primary">${row.r_score}</span></td>
+                    <td><span class="badge bg-success">${row.f_score}</span></td>
+                    <td><span class="badge bg-warning">${row.m_score}</span></td>
+                    <td><span class="badge bg-dark">${row.rfm_score}</span></td>
+                    <td><span class="badge" style="background:${color}">${row.segment}</span></td>
+                </tr>`;
+            });
+            $('#rfm-table tbody').html(tableHtml);
+        } else {
+            $('#rfm-table tbody').html(`<tr><td colspan="10" class="text-center text-danger">خطأ: ${response.error}</td></tr>`);
+        }
+    }).fail(function() {
+        $('#rfm-table tbody').html('<tr><td colspan="10" class="text-center text-danger">حدث خطأ في الاتصال بالخادم</td></tr>');
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block title %}الرئيسية - نظام تحليل المبيعات{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 text-center mb-5">
+        <h1 class="display-3 fw-bold" style="color: #2c3e50;">
+            🚀 نظام تحليل المبيعات والعملاء
+        </h1>
+        <p class="lead text-muted" style="font-size: 1.3rem;">
+            تحليل متكامل باستخدام RFM والتنبؤ والتحليل الموسمي
+        </p>
+        <hr class="w-50 mx-auto">
+    </div>
+</div>
+
+<!-- البطاقات الرئيسية -->
+<div class="row g-4">
+    <!-- بطاقة RFM -->
+    <div class="col-md-4">
+        <div class="card h-100 text-center shadow-sm hover-card">
+            <div class="card-body p-4">
+                <div class="icon-box mb-3" style="font-size: 3.5rem; color: #3498db;">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h3 class="card-title fw-bold">📊 تحليل RFM</h3>
+                <p class="card-text text-muted">
+                    تقسيم العملاء حسب السلوك الشرائي<br>
+                    <small>(Recency - Frequency - Monetary)</small>
+                </p>
+                <ul class="list-unstyled text-start small">
+                    <li>✅ تحديد العملاء الأكثر قيمة</li>
+                    <li>✅ اكتشاف العملاء المعرضين للخطر</li>
+                    <li>✅ تحسين استراتيجيات التسويق</li>
+                </ul>
+                <a href="/rfm" class="btn btn-primary btn-lg w-100 mt-3">
+                    <i class="fas fa-arrow-left"></i> عرض التحليل
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- بطاقة التنبؤ -->
+    <div class="col-md-4">
+        <div class="card h-100 text-center shadow-sm hover-card">
+            <div class="card-body p-4">
+                <div class="icon-box mb-3" style="font-size: 3.5rem; color: #2ecc71;">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h3 class="card-title fw-bold">📈 التنبؤ بالمبيعات</h3>
+                <p class="card-text text-muted">
+                    توقع المبيعات المستقبلية<br>
+                    <small>باستخدام نماذج تحليلية متقدمة</small>
+                </p>
+                <ul class="list-unstyled text-start small">
+                    <li>✅ التنبؤ لـ 7-60 يوم قادم</li>
+                    <li>✅ تحليل الاتجاهات الموسمية</li>
+                    <li>✅ دعم اتخاذ القرار</li>
+                </ul>
+                <a href="/forecast" class="btn btn-success btn-lg w-100 mt-3">
+                    <i class="fas fa-arrow-left"></i> عرض التنبؤ
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- بطاقة التحليل الموسمي -->
+    <div class="col-md-4">
+        <div class="card h-100 text-center shadow-sm hover-card">
+            <div class="card-body p-4">
+                <div class="icon-box mb-3" style="font-size: 3.5rem; color: #f39c12;">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <h3 class="card-title fw-bold">📊 التحليل الموسمي</h3>
+                <p class="card-text text-muted">
+                    اكتشاف الأنماط الموسمية<br>
+                    <small>وتحليل الاتجاهات الزمنية</small>
+                </p>
+                <ul class="list-unstyled text-start small">
+                    <li>✅ تحديد أفضل الشهور</li>
+                    <li>✅ تحليل الأنماط الموسمية</li>
+                    <li>✅ التخطيط للمستقبل</li>
+                </ul>
+                <a href="/seasonal" class="btn btn-warning btn-lg w-100 mt-3">
+                    <i class="fas fa-arrow-left"></i> عرض التحليل
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- إحصائيات سريعة -->
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h4 class="text-center mb-4">
+                    <i class="fas fa-chart-pie text-primary"></i> 
+                    📊 إحصائيات سريعة
+                </h4>
+                <div class="row g-3" id="quick-stats">
+                    <div class="col-md-3 col-6">
+                        <div class="stat-card p-3 bg-light rounded-3">
+                            <div class="text-muted small">إجمالي الطلبات</div>
+                            <div class="h2 fw-bold text-primary" id="total-orders">
+                                <span class="spinner-border spinner-border-sm" role="status"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <div class="stat-card p-3 bg-light rounded-3">
+                            <div class="text-muted small">عدد العملاء</div>
+                            <div class="h2 fw-bold text-success" id="total-customers">
+                                <span class="spinner-border spinner-border-sm" role="status"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <div class="stat-card p-3 bg-light rounded-3">
+                            <div class="text-muted small">إجمالي الإيرادات</div>
+                            <div class="h2 fw-bold text-warning" id="total-revenue">
+                                <span class="spinner-border spinner-border-sm" role="status"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <div class="stat-card p-3 bg-light rounded-3">
+                            <div class="text-muted small">متوسط قيمة الطلب</div>
+                            <div class="h2 fw-bold text-danger" id="avg-order">
+                                <span class="spinner-border spinner-border-sm" role="status"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- معلومات إضافية -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5><i class="fas fa-info-circle text-primary"></i> عن النظام</h5>
+                <p class="text-muted small">
+                    هذا النظام يوفر تحليلاً متكاملاً لبيانات المبيعات والعملاء باستخدام:
+                </p>
+                <ul class="text-muted small">
+                    <li><strong>RFM</strong>: تقسيم العملاء حسب السلوك الشرائي</li>
+                    <li><strong>التنبؤ</strong>: توقع المبيعات المستقبلية</li>
+                    <li><strong>التحليل الموسمي</strong>: اكتشاف الأنماط الموسمية</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5><i class="fas fa-download text-success"></i> تصدير البيانات</h5>
+                <p class="text-muted small">يمكنك تصدير البيانات والتقارير بصيغ متعددة:</p>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="/api/export?format=csv&type=all" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-file-csv"></i> CSV
+                    </a>
+                    <a href="/api/export?format=json&type=all" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-file-code"></i> JSON
+                    </a>
+                    <a href="/api/export?format=csv&type=rfm" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-users"></i> RFM
+                    </a>
+                    <a href="/api/export?format=csv&type=forecast" class="btn btn-outline-warning btn-sm">
+                        <i class="fas fa-chart-line"></i> التنبؤ
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.hover-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.hover-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.15) !important;
+}
+.icon-box {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    border-radius: 50%;
+}
+.stat-card {
+    transition: background 0.3s ease;
+}
+.stat-card:hover {
+    background: #e9ecef !important;
+}
+</style>
+
+<script>
+$(document).ready(function() {
+    // تحميل الإحصائيات
+    $.get('/api/stats', function(response) {
+        if (response.success) {
+            const stats = response.stats;
+            $('#total-orders').text(stats.total_orders.toLocaleString());
+            $('#total-customers').text(stats.total_customers.toLocaleString());
+            $('#total-revenue').text(stats.total_revenue.toLocaleString() + ' ريال');
+            $('#avg-order').text(stats.avg_order_value.toFixed(2) + ' ريال');
+        } else {
+            $('#total-orders').text('لا توجد بيانات');
+            $('#total-customers').text('لا توجد بيانات');
+            $('#total-revenue').text('لا توجد بيانات');
+            $('#avg-order').text('لا توجد بيانات');
+        }
+    }).fail(function() {
+        $('#total-orders').text('خطأ في التحميل');
+        $('#total-customers').text('خطأ في التحميل');
+        $('#total-revenue').text('خطأ في التحميل');
+        $('#avg-order').text('خطأ في التحميل');
+    });
+});
+</script>
+{% endblock %}

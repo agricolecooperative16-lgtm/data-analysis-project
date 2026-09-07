@@ -26,3 +26,6 @@ data/processed/
 htmlcov/ 
 .tox/ 
 .mypy_cache/ 
+"data/raw/" 
+"data/processed/" 
+"!data/raw/.gitkeep" 
