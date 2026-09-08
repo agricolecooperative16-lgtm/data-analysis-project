@@ -15,28 +15,36 @@
     <div class="col-md-3 col-6">
         <div class="stat-card">
             <div class="icon text-primary"><i class="fas fa-shopping-cart fa-2x"></i></div>
-            <div class="value" id="d-total-orders">-</div>
+            <div class="value" id="d-total-orders">
+                <span class="spinner-border spinner-border-sm" role="status"></span>
+            </div>
             <div class="label">إجمالي الطلبات</div>
         </div>
     </div>
     <div class="col-md-3 col-6">
         <div class="stat-card">
             <div class="icon text-success"><i class="fas fa-users fa-2x"></i></div>
-            <div class="value" id="d-total-customers">-</div>
+            <div class="value" id="d-total-customers">
+                <span class="spinner-border spinner-border-sm" role="status"></span>
+            </div>
             <div class="label">عدد العملاء</div>
         </div>
     </div>
     <div class="col-md-3 col-6">
         <div class="stat-card">
             <div class="icon text-warning"><i class="fas fa-money-bill-wave fa-2x"></i></div>
-            <div class="value" id="d-total-revenue">-</div>
+            <div class="value" id="d-total-revenue">
+                <span class="spinner-border spinner-border-sm" role="status"></span>
+            </div>
             <div class="label">إجمالي الإيرادات</div>
         </div>
     </div>
     <div class="col-md-3 col-6">
         <div class="stat-card">
             <div class="icon text-danger"><i class="fas fa-chart-bar fa-2x"></i></div>
-            <div class="value" id="d-avg-order">-</div>
+            <div class="value" id="d-avg-order">
+                <span class="spinner-border spinner-border-sm" role="status"></span>
+            </div>
             <div class="label">متوسط قيمة الطلب</div>
         </div>
     </div>
@@ -47,8 +55,10 @@
     <div class="col-md-8">
         <div class="card">
             <div class="card-body">
-                <h5>📈 المبيعات اليومية</h5>
-                <canvas id="salesChart" height="200"></canvas>
+                <h5>📈 المبيعات الشهرية</h5>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="salesChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -56,7 +66,9 @@
         <div class="card">
             <div class="card-body">
                 <h5>🧑‍💼 توزيع العملاء</h5>
-                <canvas id="segmentChart" height="200"></canvas>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="segmentChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -87,143 +99,226 @@
 </div>
 
 <script>
-$(document).ready(function() {
-    // تحميل الإحصائيات العامة
-    $.get('/api/stats', function(response) {
-        if (response.success) {
-            const stats = response.stats;
-            $('#d-total-orders').text(stats.total_orders.toLocaleString());
-            $('#d-total-customers').text(stats.total_customers.toLocaleString());
-            $('#d-total-revenue').text(stats.total_revenue.toLocaleString());
-            $('#d-avg-order').text(stats.avg_order_value.toFixed(2));
-        }
-    });
+// استخدام fetch للحصول على البيانات
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("📄 لوحة التحكم جاهزة");
     
-    // تحميل بيانات RFM للرسم البياني
-    $.get('/api/rfm', function(response) {
-        if (response.success) {
-            // رسم توزيع الشرائح
-            const ctx2 = document.getElementById('segmentChart').getContext('2d');
-            const segments = response.segment_distribution || {};
-            const labels = Object.keys(segments);
-            const data = Object.values(segments);
-            const colors = ['#2ecc71', '#3498db', '#f1c40f', '#e74c3c', '#95a5a6'];
-            
-            if (labels.length > 0) {
-                new Chart(ctx2, {
-                    type: 'doughnut',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            data: data,
-                            backgroundColor: colors.slice(0, labels.length)
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: { position: 'bottom', labels: { font: { size: 12 } } }
-                        }
-                    }
-                });
+    // 1. تحميل الإحصائيات العامة
+    fetch('/api/stats')
+        .then(response => response.json())
+        .then(data => {
+            console.log("✅ تم استلام الإحصائيات:", data);
+            if (data.success) {
+                const stats = data.stats || {};
+                document.getElementById('d-total-orders').textContent = (stats.total_orders || 0).toLocaleString();
+                document.getElementById('d-total-customers').textContent = (stats.total_customers || 0).toLocaleString();
+                document.getElementById('d-total-revenue').textContent = (stats.total_revenue || 0).toLocaleString();
+                document.getElementById('d-avg-order').textContent = (stats.avg_order_value || 0).toFixed(2);
             }
-        }
-    });
+        })
+        .catch(error => {
+            console.error('❌ خطأ في تحميل الإحصائيات:', error);
+            document.querySelectorAll('#d-total-orders, #d-total-customers, #d-total-revenue, #d-avg-order')
+                .forEach(el => el.textContent = 'خطأ');
+        });
     
-    // رسم المبيعات اليومية (بيانات من API)
-    $.get('/api/seasonal', function(response) {
-        if (response.success && response.total_by_month) {
-            const months = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 
-                           'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
-            const data = response.total_by_month;
-            const labels = data.map(d => months[d.month - 1]);
-            const values = data.map(d => d.total_amount);
-            
-            const ctx = document.getElementById('salesChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'المبيعات الشهرية',
-                        data: values,
-                        backgroundColor: 'rgba(102, 126, 234, 0.7)',
-                        borderColor: '#667eea',
-                        borderWidth: 2,
-                        borderRadius: 5
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: { callback: function(value) { return value.toLocaleString(); } }
+    // 2. تحميل بيانات RFM للرسم البياني
+    fetch('/api/rfm')
+        .then(response => response.json())
+        .then(data => {
+            console.log("✅ تم استلام بيانات RFM:", data);
+            if (data.success && data.segment_distribution) {
+                const segments = data.segment_distribution || {};
+                const labels = Object.keys(segments);
+                const values = Object.values(segments);
+                const colors = ['#2ecc71', '#3498db', '#f1c40f', '#e74c3c', '#95a5a6'];
+                
+                if (labels.length > 0) {
+                    const ctx = document.getElementById('segmentChart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                data: values,
+                                backgroundColor: colors.slice(0, labels.length),
+                                borderWidth: 2,
+                                borderColor: '#fff'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { 
+                                    position: 'bottom', 
+                                    labels: { 
+                                        font: { size: 12 },
+                                        boxWidth: 12,
+                                        padding: 10
+                                    } 
+                                }
+                            }
                         }
-                    }
+                    });
                 }
-            });
-        }
-    });
+            }
+        })
+        .catch(error => console.error('❌ خطأ في تحميل RFM:', error));
     
-    // تحميل توزيع المدن
-    $.get('/api/customers', function(response) {
-        if (response.success) {
-            const customers = response.customers || [];
-            const cities = {};
-            customers.forEach(c => {
-                const city = c.city || 'غير محدد';
-                cities[city] = (cities[city] || 0) + 1;
-            });
-            
-            let html = '';
-            const sorted = Object.entries(cities).sort((a, b) => b[1] - a[1]);
-            sorted.forEach(([city, count]) => {
-                const percentage = ((count / customers.length) * 100).toFixed(1);
-                html += `
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <span>${city}</span>
-                        <span>${count} (${percentage}%)</span>
-                    </div>
-                    <div class="progress mb-2" style="height:6px;">
-                        <div class="progress-bar bg-info" role="progressbar" style="width:${percentage}%;"></div>
-                    </div>
-                `;
-            });
-            $('#city-distribution').html(html || '<div class="text-muted">لا توجد بيانات</div>');
-        }
-    });
+    // 3. تحميل البيانات الموسمية للرسم البياني
+    fetch('/api/seasonal')
+        .then(response => response.json())
+        .then(data => {
+            console.log("✅ تم استلام البيانات الموسمية:", data);
+            if (data.success && data.total_by_month) {
+                const months = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 
+                               'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+                const monthlyData = data.total_by_month || [];
+                const labels = monthlyData.map(d => months[(d.month || 1) - 1]);
+                const values = monthlyData.map(d => d.total_amount || 0);
+                
+                if (labels.length > 0) {
+                    const ctx = document.getElementById('salesChart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'المبيعات الشهرية',
+                                data: values,
+                                backgroundColor: 'rgba(102, 126, 234, 0.7)',
+                                borderColor: '#667eea',
+                                borderWidth: 2,
+                                borderRadius: 5
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: { 
+                                        callback: function(value) { 
+                                            return value.toLocaleString(); 
+                                        } 
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+        })
+        .catch(error => console.error('❌ خطأ في تحميل البيانات الموسمية:', error));
     
-    // تحميل توزيع الفئات
-    $.get('/api/data', function(response) {
-        if (response.success) {
-            const data = response.data || [];
-            const categories = {};
-            data.forEach(d => {
-                const cat = d.category || 'غير محدد';
-                categories[cat] = (categories[cat] || 0) + 1;
-            });
-            
-            let html = '';
-            const sorted = Object.entries(categories).sort((a, b) => b[1] - a[1]);
-            const colors = ['#3498db', '#2ecc71', '#f1c40f', '#e74c3c', '#9b59b6', '#1abc9c', '#e67e22'];
-            sorted.forEach(([cat, count], index) => {
-                const percentage = ((count / data.length) * 100).toFixed(1);
-                const color = colors[index % colors.length];
-                html += `
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <span>${cat}</span>
-                        <span>${count} (${percentage}%)</span>
-                    </div>
-                    <div class="progress mb-2" style="height:6px;">
-                        <div class="progress-bar" role="progressbar" style="width:${percentage}%;background:${color};"></div>
-                    </div>
-                `;
-            });
-            $('#category-distribution').html(html || '<div class="text-muted">لا توجد بيانات</div>');
+    // 4. تحميل توزيع المدن
+    fetch('/api/customers')
+        .then(response => response.json())
+        .then(data => {
+            console.log("✅ تم استلام بيانات العملاء:", data);
+            if (data.success && data.customers) {
+                const customers = data.customers || [];
+                const cities = {};
+                customers.forEach(c => {
+                    const city = c.city || 'غير محدد';
+                    cities[city] = (cities[city] || 0) + 1;
+                });
+                
+                let html = '';
+                const sorted = Object.entries(cities).sort((a, b) => b[1] - a[1]);
+                if (sorted.length === 0) {
+                    html = '<div class="text-muted text-center">لا توجد بيانات</div>';
+                } else {
+                    sorted.forEach(([city, count]) => {
+                        const percentage = ((count / customers.length) * 100).toFixed(1);
+                        html += `
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span>${city}</span>
+                                <span>${count} (${percentage}%)</span>
+                            </div>
+                            <div class="progress mb-2" style="height:6px;">
+                                <div class="progress-bar bg-info" role="progressbar" style="width:${percentage}%;"></div>
+                            </div>
+                        `;
+                    });
+                }
+                document.getElementById('city-distribution').innerHTML = html;
+            }
+        })
+        .catch(error => {
+            console.error('❌ خطأ في تحميل المدن:', error);
+            document.getElementById('city-distribution').innerHTML = '<div class="text-muted text-center">خطأ في التحميل</div>';
+        });
+    
+    // 5. تحميل توزيع الفئات
+    fetch('/api/data')
+        .then(response => response.json())
+        .then(data => {
+            console.log("✅ تم استلام بيانات الطلبات:", data);
+            if (data.success && data.data) {
+                const orders = data.data || [];
+                const categories = {};
+                orders.forEach(d => {
+                    const cat = d.category || 'غير محدد';
+                    categories[cat] = (categories[cat] || 0) + 1;
+                });
+                
+                let html = '';
+                const sorted = Object.entries(categories).sort((a, b) => b[1] - a[1]);
+                const colors = ['#3498db', '#2ecc71', '#f1c40f', '#e74c3c', '#9b59b6', '#1abc9c', '#e67e22'];
+                
+                if (sorted.length === 0) {
+                    html = '<div class="text-muted text-center">لا توجد بيانات</div>';
+                } else {
+                    sorted.forEach(([cat, count], index) => {
+                        const percentage = ((count / orders.length) * 100).toFixed(1);
+                        const color = colors[index % colors.length];
+                        html += `
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span>${cat}</span>
+                                <span>${count} (${percentage}%)</span>
+                            </div>
+                            <div class="progress mb-2" style="height:6px;">
+                                <div class="progress-bar" role="progressbar" style="width:${percentage}%;background:${color};"></div>
+                            </div>
+                        `;
+                    });
+                }
+                document.getElementById('category-distribution').innerHTML = html;
+            }
+        })
+        .catch(error => {
+            console.error('❌ خطأ في تحميل الفئات:', error);
+            document.getElementById('category-distribution').innerHTML = '<div class="text-muted text-center">خطأ في التحميل</div>';
+        });
+});
+
+// نسخة احتياطية باستخدام jQuery
+$(document).ready(function() {
+    console.log("📄 jQuery جاهز - تحميل إضافي");
+    
+    // تحميل الإحصائيات باستخدام jQuery
+    $.ajax({
+        url: '/api/stats',
+        type: 'GET',
+        dataType: 'json',
+        timeout: 5000,
+        success: function(data) {
+            if (data.success) {
+                const stats = data.stats || {};
+                $('#d-total-orders').text((stats.total_orders || 0).toLocaleString());
+                $('#d-total-customers').text((stats.total_customers || 0).toLocaleString());
+                $('#d-total-revenue').text((stats.total_revenue || 0).toLocaleString());
+                $('#d-avg-order').text((stats.avg_order_value || 0).toFixed(2));
+            }
+        },
+        error: function() {
+            console.warn('⚠️ فشل تحميل الإحصائيات عبر jQuery');
         }
     });
 });

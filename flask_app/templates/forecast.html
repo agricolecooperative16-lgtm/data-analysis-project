@@ -17,11 +17,13 @@
                 <h5>⚙️ إعدادات التنبؤ</h5>
                 <div class="mb-3">
                     <label class="form-label">عدد أيام التنبؤ</label>
-                    <input type="range" class="form-range" id="forecast-days" min="7" max="60" value="14">
-                    <div class="d-flex justify-content-between">
-                        <span>7</span>
-                        <span id="days-label">14</span>
-                        <span>60</span>
+                    <div class="d-flex align-items-center gap-3">
+                        <input type="range" class="form-range flex-grow-1" id="forecast-days" min="7" max="60" value="14">
+                        <span class="badge bg-primary fs-5" id="days-label" style="min-width: 40px;">14</span>
+                    </div>
+                    <div class="d-flex justify-content-between small text-muted">
+                        <span>7 أيام</span>
+                        <span>60 يوم</span>
                     </div>
                 </div>
                 <button class="btn btn-primary w-100" id="forecast-btn">
@@ -39,23 +41,35 @@
                         <div class="col-4">
                             <div class="stat-card">
                                 <div class="label">عدد الأيام</div>
-                                <div class="value" id="f-days">-</div>
+                                <div class="value" id="f-days">
+                                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                                </div>
                             </div>
                         </div>
                         <div class="col-4">
                             <div class="stat-card">
                                 <div class="label">متوسط التنبؤ</div>
-                                <div class="value" id="f-avg">-</div>
+                                <div class="value" id="f-avg">
+                                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                                </div>
                             </div>
                         </div>
                         <div class="col-4">
                             <div class="stat-card">
                                 <div class="label">إجمالي التنبؤ</div>
-                                <div class="value" id="f-total">-</div>
+                                <div class="value" id="f-total">
+                                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <img id="forecast-plot" src="" alt="Forecast Plot" class="img-fluid mt-3">
+                    <div id="forecast-plot-container" class="text-center mt-3">
+                        <div id="forecast-loading">
+                            <i class="fas fa-spinner fa-spin fa-2x"></i>
+                            <p class="mt-2">جاري تحميل التنبؤ...</p>
+                        </div>
+                        <img id="forecast-plot" src="" alt="Forecast Plot" class="img-fluid mt-2" style="display:none; width:100%; max-height:400px; object-fit:contain;">
+                    </div>
                 </div>
             </div>
         </div>
@@ -63,52 +77,142 @@
 </div>
 
 <script>
-$(document).ready(function() {
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("📄 صفحة التنبؤ جاهزة");
+    
     // تحديث قيمة الأيام
+    const daysSlider = document.getElementById('forecast-days');
+    const daysLabel = document.getElementById('days-label');
+    
+    daysSlider.addEventListener('input', function() {
+        daysLabel.textContent = this.value;
+    });
+    
+    // دالة تحميل التنبؤ
+    function loadForecast(days) {
+        console.log("🔄 جاري تحميل التنبؤ لـ " + days + " أيام...");
+        
+        // عرض حالة التحميل
+        document.getElementById('forecast-loading').style.display = 'block';
+        document.getElementById('forecast-plot').style.display = 'none';
+        document.getElementById('f-days').innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+        document.getElementById('f-avg').innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+        document.getElementById('f-total').innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+        
+        fetch('/api/forecast?days=' + days)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('فشل الاتصال: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("✅ تم استلام التنبؤ:", data);
+                
+                if (data.success) {
+                    // تحديث الإحصائيات
+                    document.getElementById('f-days').textContent = data.days || 0;
+                    document.getElementById('f-avg').textContent = (data.avg_forecast || 0).toFixed(2);
+                    document.getElementById('f-total').textContent = (data.total_forecast || 0).toFixed(2);
+                    
+                    // عرض الرسم البياني
+                    if (data.plot) {
+                        document.getElementById('forecast-loading').style.display = 'none';
+                        const plotImg = document.getElementById('forecast-plot');
+                        plotImg.style.display = 'block';
+                        plotImg.src = 'data:image/png;base64,' + data.plot;
+                    } else {
+                        document.getElementById('forecast-loading').innerHTML = `
+                            <div class="alert alert-warning">لا توجد بيانات كافية للتنبؤ</div>
+                        `;
+                    }
+                } else {
+                    throw new Error(data.error || 'خطأ غير معروف');
+                }
+            })
+            .catch(error => {
+                console.error('❌ خطأ في التنبؤ:', error);
+                document.getElementById('forecast-loading').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle"></i> 
+                        خطأ في تحميل التنبؤ: ${error.message}
+                        <br><small>تأكد من تشغيل الخادم</small>
+                    </div>
+                `;
+                document.getElementById('f-days').textContent = 'خطأ';
+                document.getElementById('f-avg').textContent = 'خطأ';
+                document.getElementById('f-total').textContent = 'خطأ';
+            });
+    }
+    
+    // زر تشغيل التنبؤ
+    document.getElementById('forecast-btn').addEventListener('click', function() {
+        const days = document.getElementById('forecast-days').value;
+        loadForecast(days);
+    });
+    
+    // تشغيل تلقائي عند التحميل
+    setTimeout(function() {
+        loadForecast(14);
+    }, 500);
+});
+
+// نسخة احتياطية باستخدام jQuery
+$(document).ready(function() {
+    console.log("📄 jQuery جاهز - تحميل التنبؤ");
+    
+    // تحديث قيمة الأيام باستخدام jQuery
     $('#forecast-days').on('input', function() {
         $('#days-label').text($(this).val());
     });
     
-    // تشغيل التنبؤ
+    // زر التنبؤ باستخدام jQuery
     $('#forecast-btn').click(function() {
         const days = $('#forecast-days').val();
-        $('#forecast-results').html('<div class="loading"><i class="fas fa-spinner spinner fa-2x"></i><p>جاري التنبؤ...</p></div>');
+        console.log("🔄 (jQuery) تشغيل التنبؤ لـ " + days + " أيام");
         
-        $.get('/api/forecast', {days: days}, function(response) {
-            if (response.success) {
-                // عرض الإحصائيات
-                let html = `
-                    <div class="row g-3" id="forecast-stats">
-                        <div class="col-4">
-                            <div class="stat-card">
-                                <div class="label">عدد الأيام</div>
-                                <div class="value" id="f-days">${response.days}</div>
-                            </div>
-                        </div>
-                        <div class="col-4">
-                            <div class="stat-card">
-                                <div class="label">متوسط التنبؤ</div>
-                                <div class="value" id="f-avg">${response.avg_forecast.toFixed(2)}</div>
-                            </div>
-                        </div>
-                        <div class="col-4">
-                            <div class="stat-card">
-                                <div class="label">إجمالي التنبؤ</div>
-                                <div class="value" id="f-total">${response.total_forecast.toFixed(2)}</div>
-                            </div>
-                        </div>
+        $('#forecast-loading').show();
+        $('#forecast-plot').hide();
+        $('#f-days, #f-avg, #f-total').html('<span class="spinner-border spinner-border-sm" role="status"></span>');
+        
+        $.ajax({
+            url: '/api/forecast',
+            type: 'GET',
+            data: { days: days },
+            dataType: 'json',
+            timeout: 30000,
+            success: function(data) {
+                console.log("✅ (jQuery) تم استلام التنبؤ:", data);
+                if (data.success) {
+                    $('#f-days').text(data.days || 0);
+                    $('#f-avg').text((data.avg_forecast || 0).toFixed(2));
+                    $('#f-total').text((data.total_forecast || 0).toFixed(2));
+                    
+                    if (data.plot) {
+                        $('#forecast-loading').hide();
+                        $('#forecast-plot').show().attr('src', 'data:image/png;base64,' + data.plot);
+                    }
+                } else {
+                    throw new Error(data.error || 'خطأ غير معروف');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('❌ (jQuery) خطأ في التنبؤ:', error);
+                $('#forecast-loading').html(`
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle"></i> 
+                        خطأ في تحميل التنبؤ: ${error}
                     </div>
-                    <img id="forecast-plot" src="data:image/png;base64,${response.plot}" alt="Forecast Plot" class="img-fluid mt-3">
-                `;
-                $('#forecast-results').html(html);
-            } else {
-                $('#forecast-results').html(`<div class="alert alert-danger">خطأ: ${response.error}</div>`);
+                `);
+                $('#f-days, #f-avg, #f-total').text('خطأ');
             }
         });
     });
     
-    // تشغيل تلقائي عند التحميل
-    $('#forecast-btn').click();
+    // تشغيل تلقائي
+    setTimeout(function() {
+        $('#forecast-btn').click();
+    }, 500);
 });
 </script>
 {% endblock %}

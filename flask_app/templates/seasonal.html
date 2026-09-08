@@ -10,59 +10,86 @@
     </div>
 </div>
 
+<!-- البطاقات الإحصائية -->
 <div class="row g-4" id="seasonal-stats">
     <div class="col-md-3 col-6">
         <div class="stat-card">
+            <div class="icon text-primary"><i class="fas fa-calendar-day"></i></div>
             <div class="label">أفضل شهر</div>
-            <div class="value" id="s-best-month">-</div>
+            <div class="value" id="s-best-month">
+                <span class="spinner-border spinner-border-sm" role="status"></span>
+            </div>
         </div>
     </div>
     <div class="col-md-3 col-6">
         <div class="stat-card">
+            <div class="icon text-success"><i class="fas fa-coins"></i></div>
             <div class="label">إجمالي المبيعات السنوية</div>
-            <div class="value" id="s-total">-</div>
+            <div class="value" id="s-total">
+                <span class="spinner-border spinner-border-sm" role="status"></span>
+            </div>
         </div>
     </div>
     <div class="col-md-3 col-6">
         <div class="stat-card">
+            <div class="icon text-warning"><i class="fas fa-chart-simple"></i></div>
             <div class="label">متوسط المبيعات الشهرية</div>
-            <div class="value" id="s-avg">-</div>
+            <div class="value" id="s-avg">
+                <span class="spinner-border spinner-border-sm" role="status"></span>
+            </div>
         </div>
     </div>
     <div class="col-md-3 col-6">
         <div class="stat-card">
+            <div class="icon text-danger"><i class="fas fa-arrow-up"></i></div>
             <div class="label">أعلى مبيعات شهرية</div>
-            <div class="value" id="s-max">-</div>
-        </div>
-    </div>
-</div>
-
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body">
-                <h5>المبيعات الشهرية</h5>
-                <img id="seasonal-plot" src="" alt="Seasonal Plot" class="img-fluid">
+            <div class="value" id="s-max">
+                <span class="spinner-border spinner-border-sm" role="status"></span>
             </div>
         </div>
     </div>
 </div>
 
+<!-- الرسوم البيانية -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5>📊 المبيعات الشهرية</h5>
+                <div id="seasonal-plot-container" class="text-center">
+                    <div id="seasonal-loading">
+                        <i class="fas fa-spinner fa-spin fa-2x"></i>
+                        <p class="mt-2">جاري تحميل البيانات الموسمية...</p>
+                    </div>
+                    <img id="seasonal-plot" src="" alt="Seasonal Plot" class="img-fluid mt-2" style="display:none; width:100%; max-height:500px; object-fit:contain;">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- جدول البيانات الشهرية -->
 <div class="row mt-4">
     <div class="col-12">
         <div class="card">
             <div class="card-body">
                 <h5>📋 البيانات الشهرية</h5>
                 <div class="table-responsive">
-                    <table class="table table-striped" id="seasonal-table">
+                    <table class="table table-striped table-hover" id="seasonal-table">
                         <thead>
                             <tr>
+                                <th>#</th>
                                 <th>الشهر</th>
                                 <th>إجمالي المبيعات</th>
                                 <th>متوسط المبيعات</th>
+                                <th>النسبة المئوية</th>
                             </tr>
                         </thead>
-                        <tbody></tbody>
+                        <tbody>
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">جاري تحميل البيانات...</td>
+                            </tr>
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -71,35 +98,181 @@
 </div>
 
 <script>
-$(document).ready(function() {
-    $.get('/api/seasonal', function(response) {
-        if (response.success) {
-            // تحديث الإحصائيات
-            $('#s-best-month').text(response.best_month);
-            $('#s-total').text(response.total_yearly.toFixed(2) + ' ريال');
-            $('#s-avg').text(response.avg_monthly.toFixed(2) + ' ريال');
-            $('#s-max').text(response.best_month_total.toFixed(2) + ' ريال');
-            
-            // عرض الرسم
-            $('#seasonal-plot').attr('src', 'data:image/png;base64,' + response.plot);
-            
-            // عرض جدول البيانات
-            let html = '';
-            const monthNames = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 
-                              'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
-            response.total_by_month.forEach(row => {
-                const avg = response.avg_by_month.find(a => a.month === row.month);
-                html += `<tr>
-                    <td><strong>${monthNames[row.month - 1]}</strong></td>
-                    <td>${row.total_amount.toFixed(2)} ريال</td>
-                    <td>${avg ? avg.avg_amount.toFixed(2) : '-'} ريال</td>
-                </tr>`;
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("📄 صفحة التحليل الموسمي جاهزة");
+    
+    // تحميل البيانات الموسمية
+    function loadSeasonal() {
+        console.log("🔄 جاري تحميل البيانات الموسمية...");
+        
+        // عرض حالة التحميل
+        document.getElementById('seasonal-loading').style.display = 'block';
+        document.getElementById('seasonal-plot').style.display = 'none';
+        document.querySelectorAll('#s-best-month, #s-total, #s-avg, #s-max')
+            .forEach(el => el.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>');
+        
+        fetch('/api/seasonal')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('فشل الاتصال: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("✅ تم استلام البيانات الموسمية:", data);
+                
+                if (data.success) {
+                    // تحديث الإحصائيات
+                    document.getElementById('s-best-month').textContent = data.best_month || '-';
+                    document.getElementById('s-total').textContent = (data.total_yearly || 0).toFixed(2);
+                    document.getElementById('s-avg').textContent = (data.avg_monthly || 0).toFixed(2);
+                    document.getElementById('s-max').textContent = (data.best_month_total || 0).toFixed(2);
+                    
+                    // عرض الرسم البياني
+                    if (data.plot) {
+                        document.getElementById('seasonal-loading').style.display = 'none';
+                        const plotImg = document.getElementById('seasonal-plot');
+                        plotImg.style.display = 'block';
+                        plotImg.src = 'data:image/png;base64,' + data.plot;
+                    } else {
+                        document.getElementById('seasonal-loading').innerHTML = `
+                            <div class="alert alert-warning">لا توجد بيانات كافية للتحليل الموسمي</div>
+                        `;
+                    }
+                    
+                    // عرض جدول البيانات
+                    const monthNames = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 
+                                      'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+                    const monthlyData = data.total_by_month || [];
+                    const totalYearly = data.total_yearly || 1;
+                    const tableBody = document.querySelector('#seasonal-table tbody');
+                    
+                    if (monthlyData.length === 0) {
+                        tableBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">لا توجد بيانات شهرية</td></tr>`;
+                    } else {
+                        let html = '';
+                        monthlyData.forEach((row, index) => {
+                            const percentage = ((row.total_amount / totalYearly) * 100).toFixed(1);
+                            const avgRow = data.avg_by_month ? data.avg_by_month.find(a => a.month === row.month) : null;
+                            const avgValue = avgRow ? avgRow.avg_amount : 0;
+                            html += `<tr>
+                                <td>${index + 1}</td>
+                                <td><strong>${monthNames[(row.month || 1) - 1]}</strong></td>
+                                <td>${(row.total_amount || 0).toFixed(2)}</td>
+                                <td>${(avgValue || 0).toFixed(2)}</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress flex-grow-1" style="height:8px;">
+                                            <div class="progress-bar bg-primary" role="progressbar" 
+                                                 style="width:${percentage}%;"></div>
+                                        </div>
+                                        <span class="small">${percentage}%</span>
+                                    </div>
+                                </td>
+                            </tr>`;
+                        });
+                        tableBody.innerHTML = html;
+                    }
+                } else {
+                    throw new Error(data.error || 'خطأ غير معروف');
+                }
+            })
+            .catch(error => {
+                console.error('❌ خطأ في تحميل البيانات الموسمية:', error);
+                document.getElementById('seasonal-loading').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle"></i> 
+                        خطأ في تحميل البيانات الموسمية: ${error.message}
+                        <br><small>تأكد من تشغيل الخادم</small>
+                    </div>
+                `;
+                document.querySelectorAll('#s-best-month, #s-total, #s-avg, #s-max')
+                    .forEach(el => el.textContent = 'خطأ');
+                document.querySelector('#seasonal-table tbody').innerHTML = `
+                    <tr><td colspan="5" class="text-center text-danger">فشل تحميل البيانات</td></tr>
+                `;
             });
-            $('#seasonal-table tbody').html(html);
-        } else {
-            alert('خطأ في تحميل البيانات الموسمية: ' + response.error);
-        }
-    });
+    }
+    
+    // تشغيل التحميل
+    loadSeasonal();
+});
+
+// نسخة احتياطية باستخدام jQuery
+$(document).ready(function() {
+    console.log("📄 jQuery جاهز - تحميل البيانات الموسمية");
+    
+    function loadSeasonalJQuery() {
+        console.log("🔄 (jQuery) جاري تحميل البيانات الموسمية...");
+        
+        $('#seasonal-loading').show();
+        $('#seasonal-plot').hide();
+        $('#s-best-month, #s-total, #s-avg, #s-max')
+            .html('<span class="spinner-border spinner-border-sm" role="status"></span>');
+        
+        $.ajax({
+            url: '/api/seasonal',
+            type: 'GET',
+            dataType: 'json',
+            timeout: 30000,
+            success: function(data) {
+                console.log("✅ (jQuery) تم استلام البيانات الموسمية:", data);
+                if (data.success) {
+                    $('#s-best-month').text(data.best_month || '-');
+                    $('#s-total').text((data.total_yearly || 0).toFixed(2));
+                    $('#s-avg').text((data.avg_monthly || 0).toFixed(2));
+                    $('#s-max').text((data.best_month_total || 0).toFixed(2));
+                    
+                    if (data.plot) {
+                        $('#seasonal-loading').hide();
+                        $('#seasonal-plot').show().attr('src', 'data:image/png;base64,' + data.plot);
+                    }
+                    
+                    const monthNames = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 
+                                      'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+                    const monthlyData = data.total_by_month || [];
+                    const totalYearly = data.total_yearly || 1;
+                    let html = '';
+                    
+                    $.each(monthlyData, function(index, row) {
+                        const percentage = ((row.total_amount / totalYearly) * 100).toFixed(1);
+                        const avgRow = data.avg_by_month ? data.avg_by_month.find(a => a.month === row.month) : null;
+                        const avgValue = avgRow ? avgRow.avg_amount : 0;
+                        html += `<tr>
+                            <td>${index + 1}</td>
+                            <td><strong>${monthNames[(row.month || 1) - 1]}</strong></td>
+                            <td>${(row.total_amount || 0).toFixed(2)}</td>
+                            <td>${(avgValue || 0).toFixed(2)}</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height:8px;">
+                                        <div class="progress-bar bg-primary" style="width:${percentage}%;"></div>
+                                    </div>
+                                    <span class="small">${percentage}%</span>
+                                </div>
+                            </td>
+                        </tr>`;
+                    });
+                    $('#seasonal-table tbody').html(html || '<tr><td colspan="5" class="text-center">لا توجد بيانات</td></tr>');
+                } else {
+                    throw new Error(data.error || 'خطأ غير معروف');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('❌ (jQuery) خطأ في تحميل البيانات الموسمية:', error);
+                $('#seasonal-loading').html(`
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle"></i> 
+                        خطأ في التحميل: ${error}
+                    </div>
+                `);
+                $('#s-best-month, #s-total, #s-avg, #s-max').text('خطأ');
+            }
+        });
+    }
+    
+    // تشغيل التحميل
+    loadSeasonalJQuery();
 });
 </script>
 {% endblock %}

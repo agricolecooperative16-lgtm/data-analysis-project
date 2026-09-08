@@ -47,9 +47,13 @@
     <div class="col-md-7">
         <div class="card">
             <div class="card-body">
-                <h5>توزيع شرائح العملاء</h5>
-                <div id="rfm-plot-container">
-                    <img id="rfm-plot" src="" alt="RFM Plot" class="img-fluid" style="width:100%;">
+                <h5>📊 توزيع شرائح العملاء</h5>
+                <div id="rfm-plot-container" class="text-center">
+                    <div id="rfm-loading">
+                        <i class="fas fa-spinner fa-spin fa-2x"></i>
+                        <p class="mt-2">جاري تحميل البيانات...</p>
+                    </div>
+                    <img id="rfm-plot" src="" alt="RFM Plot" class="img-fluid mt-2" style="display:none; width:100%; max-height:400px; object-fit:contain;">
                 </div>
             </div>
         </div>
@@ -57,7 +61,7 @@
     <div class="col-md-5">
         <div class="card">
             <div class="card-body">
-                <h5>توزيع الشرائح</h5>
+                <h5>📋 توزيع الشرائح</h5>
                 <div id="segment-distribution">
                     <div class="text-muted text-center">جاري التحميل...</div>
                 </div>
@@ -110,18 +114,41 @@
 </div>
 
 <script>
-$(document).ready(function() {
-    // تحميل بيانات RFM
-    $.get('/api/rfm', function(response) {
-        if (response.success) {
+// استخدام دالة مباشرة بدون jQuery
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("📄 صفحة RFM جاهزة");
+    
+    // تحميل البيانات من API
+    fetch('/api/rfm')
+        .then(response => {
+            console.log("📡 تم استلام الرد من API");
+            if (!response.ok) {
+                throw new Error('فشل الاتصال: ' + response.status);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("✅ تم استلام البيانات:", data);
+            
+            if (!data.success) {
+                throw new Error(data.error || 'خطأ غير معروف');
+            }
+            
             // تحديث الإحصائيات
-            $('#rfm-total').text(response.total_customers);
-            $('#rfm-recency').text(response.avg_recency.toFixed(0) + ' يوم');
-            $('#rfm-frequency').text(response.avg_frequency.toFixed(1));
-            $('#rfm-monetary').text(response.avg_monetary.toFixed(2));
+            document.getElementById('rfm-total').textContent = data.total_customers || 0;
+            document.getElementById('rfm-recency').textContent = (data.avg_recency || 0).toFixed(0) + ' يوم';
+            document.getElementById('rfm-frequency').textContent = (data.avg_frequency || 0).toFixed(1);
+            document.getElementById('rfm-monetary').textContent = (data.avg_monetary || 0).toFixed(2);
             
             // عرض الرسم البياني
-            $('#rfm-plot').attr('src', 'data:image/png;base64,' + response.plot);
+            if (data.plot) {
+                const loadingDiv = document.getElementById('rfm-loading');
+                loadingDiv.style.display = 'none';
+                
+                const plotImg = document.getElementById('rfm-plot');
+                plotImg.style.display = 'block';
+                plotImg.src = 'data:image/png;base64,' + data.plot;
+            }
             
             // عرض توزيع الشرائح
             const colors = {
@@ -132,52 +159,81 @@ $(document).ready(function() {
                 'متوسط': '#95a5a6'
             };
             
+            const segments = data.segment_distribution || {};
+            const total = data.total_customers || 1;
+            const segmentDiv = document.getElementById('segment-distribution');
+            
             let html = '';
-            for (const [segment, count] of Object.entries(response.segment_distribution)) {
-                const color = colors[segment] || '#6c757d';
-                const percentage = ((count / response.total_customers) * 100).toFixed(1);
-                html += `
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span>
-                            <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${color};margin-left:10px;"></span>
-                            <strong>${segment}</strong>
-                        </span>
-                        <span>
-                            <span class="badge bg-secondary">${count}</span>
-                            <span class="text-muted small">(${percentage}%)</span>
-                        </span>
-                    </div>
-                    <div class="progress mb-2" style="height:6px;">
-                        <div class="progress-bar" role="progressbar" style="width:${percentage}%;background:${color};" aria-valuenow="${percentage}" aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-                `;
+            if (Object.keys(segments).length === 0) {
+                html = '<div class="text-muted text-center">لا توجد شرائح لعرضها</div>';
+            } else {
+                for (const [segment, count] of Object.entries(segments)) {
+                    const color = colors[segment] || '#6c757d';
+                    const percentage = ((count / total) * 100).toFixed(1);
+                    html += `
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>
+                                <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${color};margin-left:10px;"></span>
+                                <strong>${segment}</strong>
+                            </span>
+                            <span>
+                                <span class="badge bg-secondary">${count}</span>
+                                <span class="text-muted small">(${percentage}%)</span>
+                            </span>
+                        </div>
+                        <div class="progress mb-2" style="height:6px;">
+                            <div class="progress-bar" role="progressbar" style="width:${percentage}%;background:${color};"></div>
+                        </div>
+                    `;
+                }
             }
-            $('#segment-distribution').html(html);
+            segmentDiv.innerHTML = html;
             
             // عرض جدول البيانات
-            let tableHtml = '';
-            response.rfm.slice(0, 30).forEach((row, index) => {
-                const color = colors[row.segment] || '#6c757d';
-                tableHtml += `<tr>
-                    <td>${index + 1}</td>
-                    <td><code>${row.customer_id}</code></td>
-                    <td>${row.recency}</td>
-                    <td>${row.frequency}</td>
-                    <td>${row.monetary.toFixed(2)}</td>
-                    <td><span class="badge bg-primary">${row.r_score}</span></td>
-                    <td><span class="badge bg-success">${row.f_score}</span></td>
-                    <td><span class="badge bg-warning">${row.m_score}</span></td>
-                    <td><span class="badge bg-dark">${row.rfm_score}</span></td>
-                    <td><span class="badge" style="background:${color}">${row.segment}</span></td>
-                </tr>`;
-            });
-            $('#rfm-table tbody').html(tableHtml);
-        } else {
-            $('#rfm-table tbody').html(`<tr><td colspan="10" class="text-center text-danger">خطأ: ${response.error}</td></tr>`);
-        }
-    }).fail(function() {
-        $('#rfm-table tbody').html('<tr><td colspan="10" class="text-center text-danger">حدث خطأ في الاتصال بالخادم</td></tr>');
-    });
+            const rfmData = data.rfm || [];
+            const tableBody = document.querySelector('#rfm-table tbody');
+            
+            if (rfmData.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="10" class="text-center text-muted">لا توجد بيانات لعرضها</td></tr>`;
+            } else {
+                let tableHtml = '';
+                rfmData.forEach((row, index) => {
+                    const color = colors[row.segment] || '#6c757d';
+                    tableHtml += `<tr>
+                        <td>${index + 1}</td>
+                        <td><code>${row.customer_id || 'N/A'}</code></td>
+                        <td>${row.recency || 0}</td>
+                        <td>${row.frequency || 0}</td>
+                        <td>${(row.monetary || 0).toFixed(2)}</td>
+                        <td><span class="badge bg-primary">${row.r_score || 0}</span></td>
+                        <td><span class="badge bg-success">${row.f_score || 0}</span></td>
+                        <td><span class="badge bg-warning">${row.m_score || 0}</span></td>
+                        <td><span class="badge bg-dark">${row.rfm_score || 'N/A'}</span></td>
+                        <td><span class="badge" style="background:${color}">${row.segment || 'غير محدد'}</span></td>
+                    </tr>`;
+                });
+                tableBody.innerHTML = tableHtml;
+            }
+        })
+        .catch(error => {
+            console.error('❌ خطأ:', error);
+            
+            // عرض الخطأ للمستخدم
+            document.getElementById('rfm-loading').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle"></i> 
+                    خطأ في تحميل البيانات: ${error.message}
+                    <br><small>تأكد من تشغيل الخادم</small>
+                </div>
+            `;
+            
+            document.querySelector('#rfm-table tbody').innerHTML = `
+                <tr><td colspan="10" class="text-center text-danger">
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    فشل تحميل البيانات. تأكد من تشغيل الخادم.
+                </td></tr>
+            `;
+        });
 });
 </script>
 {% endblock %}

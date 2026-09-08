@@ -18,7 +18,7 @@ def calculate_rfm_simple(df, customer_col=None, date_col=None, amount_col=None):
         amount_col: اسم عمود المبلغ (افتراضي: amount)
     
     Returns:
-        pd.DataFrame: نتائج RFM لكل عميل
+        pd.DataFrame: نتائج RFM لكل عميل (دائماً DataFrame، حتى لو كان فارغاً)
     """
     # ========== التحقق من البيانات الفارغة ==========
     if df is None or df.empty:
@@ -26,7 +26,7 @@ def calculate_rfm_simple(df, customer_col=None, date_col=None, amount_col=None):
         return pd.DataFrame(columns=['customer_id', 'recency', 'frequency', 'monetary', 
                                      'r_score', 'f_score', 'm_score', 'rfm_score', 'segment'])
     
-    # تحديد أسماء الأعمدة تلقائياً
+    # ========== تحديد أسماء الأعمدة ==========
     if customer_col is None:
         if 'customer_id' in df.columns:
             customer_col = 'customer_id'
@@ -35,7 +35,6 @@ def calculate_rfm_simple(df, customer_col=None, date_col=None, amount_col=None):
         elif 'cust_id' in df.columns:
             customer_col = 'cust_id'
         else:
-            # البحث عن عمود يحتوي على 'customer' أو 'id'
             for col in df.columns:
                 if 'customer' in col.lower() or 'cust' in col.lower() or 'id' in col.lower():
                     customer_col = col
@@ -71,7 +70,6 @@ def calculate_rfm_simple(df, customer_col=None, date_col=None, amount_col=None):
                     amount_col = col
                     break
             else:
-                # استخدام عمود آخر للعد
                 amount_col = None
                 print("⚠️ لم يتم العثور على عمود المبلغ. سيتم استخدام عدد الطلبات كبديل.")
     
@@ -81,7 +79,7 @@ def calculate_rfm_simple(df, customer_col=None, date_col=None, amount_col=None):
     if amount_col:
         print(f"   - عمود المبلغ: {amount_col}")
     
-    # نسخ البيانات
+    # ========== معالجة البيانات ==========
     df = df.copy()
     df[date_col] = pd.to_datetime(df[date_col])
     
@@ -89,44 +87,41 @@ def calculate_rfm_simple(df, customer_col=None, date_col=None, amount_col=None):
     max_date = df[date_col].max()
     print(f"   - أحدث تاريخ: {max_date}")
     
-    # حساب RFM
-    print("\n📊 حساب RFM...")
-    
     # التحقق من وجود العملاء
     if customer_col not in df.columns:
         raise ValueError(f"عمود العملاء '{customer_col}' غير موجود في البيانات")
     
-    # تجميع البيانات
+    # ========== حساب RFM ==========
+    print("\n📊 حساب RFM...")
+    
     grouped = df.groupby(customer_col)
     
-    # حساب Recency (عدد الأيام منذ آخر طلب)
+    # Recency
     recency = grouped[date_col].max().apply(lambda x: (max_date - x).days)
     
-    # حساب Frequency (عدد الطلبات)
+    # Frequency
     frequency = grouped[date_col].count()
     
-    # حساب Monetary (إجمالي المبلغ)
+    # Monetary
     if amount_col and amount_col in df.columns:
         monetary = grouped[amount_col].sum()
     else:
         monetary = pd.Series([0] * len(recency), index=recency.index)
     
-    # إنشاء DataFrame من النتائج
+    # إنشاء DataFrame
     rfm = pd.concat([recency, frequency, monetary], axis=1)
     rfm.columns = ['recency', 'frequency', 'monetary']
     rfm = rfm.reset_index()
     rfm = rfm.rename(columns={customer_col: 'customer_id'})
     
-    # التأكد من أن البيانات رقمية
+    # تنظيف البيانات
     rfm['recency'] = pd.to_numeric(rfm['recency'], errors='coerce').fillna(0)
     rfm['frequency'] = pd.to_numeric(rfm['frequency'], errors='coerce').fillna(0)
     rfm['monetary'] = pd.to_numeric(rfm['monetary'], errors='coerce').fillna(0)
     
-    # إزالة القيم الشاذة (تأكد من وجود عملاء)
-    if len(rfm) > 0:
-        rfm = rfm[rfm['frequency'] > 0]
+    # إزالة العملاء بدون طلبات
+    rfm = rfm[rfm['frequency'] > 0]
     
-    # إذا لم يتبقى عملاء، إرجاع DataFrame فارغ
     if rfm.empty:
         print("⚠️ لا يوجد عملاء صالحين للتحليل")
         return pd.DataFrame(columns=['customer_id', 'recency', 'frequency', 'monetary', 
@@ -134,22 +129,29 @@ def calculate_rfm_simple(df, customer_col=None, date_col=None, amount_col=None):
     
     print(f"✅ تم حساب RFM لـ {len(rfm)} عميل")
     
-    # حساب النقاط (Scores) - مع معالجة الأخطاء
+    # ========== حساب النقاط ==========
     print("📊 حساب نقاط RFM...")
     
-    try:
-        rfm['r_score'] = pd.qcut(rfm['recency'], q=4, labels=[4, 3, 2, 1], duplicates='drop')
-        rfm['f_score'] = pd.qcut(rfm['frequency'], q=4, labels=[1, 2, 3, 4], duplicates='drop')
-        rfm['m_score'] = pd.qcut(rfm['monetary'], q=4, labels=[1, 2, 3, 4], duplicates='drop')
-    except Exception as e:
-        print(f"⚠️ تحذير في التقسيم الربعي: {e}")
-        print("📊 استخدام التقسيم اليدوي...")
-        
+    # التأكد من وجود ما يكفي من البيانات للتقسيم الربعي
+    if len(rfm) < 4:
+        print("⚠️ عدد العملاء قليل جداً (<4)، استخدام التقسيم اليدوي")
         rfm['r_score'] = pd.cut(rfm['recency'], bins=[-1, 30, 90, 180, float('inf')], labels=[4, 3, 2, 1])
         rfm['f_score'] = pd.cut(rfm['frequency'], bins=[0, 3, 6, 12, float('inf')], labels=[1, 2, 3, 4])
         rfm['m_score'] = pd.cut(rfm['monetary'], bins=[-1, 100, 500, 1000, float('inf')], labels=[1, 2, 3, 4])
+    else:
+        try:
+            rfm['r_score'] = pd.qcut(rfm['recency'], q=4, labels=[4, 3, 2, 1], duplicates='drop')
+            rfm['f_score'] = pd.qcut(rfm['frequency'], q=4, labels=[1, 2, 3, 4], duplicates='drop')
+            rfm['m_score'] = pd.qcut(rfm['monetary'], q=4, labels=[1, 2, 3, 4], duplicates='drop')
+        except Exception as e:
+            print(f"⚠️ تحذير في التقسيم الربعي: {e}")
+            print("📊 استخدام التقسيم اليدوي...")
+            
+            rfm['r_score'] = pd.cut(rfm['recency'], bins=[-1, 30, 90, 180, float('inf')], labels=[4, 3, 2, 1])
+            rfm['f_score'] = pd.cut(rfm['frequency'], bins=[0, 3, 6, 12, float('inf')], labels=[1, 2, 3, 4])
+            rfm['m_score'] = pd.cut(rfm['monetary'], bins=[-1, 100, 500, 1000, float('inf')], labels=[1, 2, 3, 4])
     
-    # تحويل إلى أرقام مع معالجة القيم المفقودة
+    # تحويل إلى أرقام
     rfm['r_score'] = pd.to_numeric(rfm['r_score'], errors='coerce').fillna(2).astype(int)
     rfm['f_score'] = pd.to_numeric(rfm['f_score'], errors='coerce').fillna(2).astype(int)
     rfm['m_score'] = pd.to_numeric(rfm['m_score'], errors='coerce').fillna(2).astype(int)
@@ -157,30 +159,55 @@ def calculate_rfm_simple(df, customer_col=None, date_col=None, amount_col=None):
     rfm['f_score'] = rfm['f_score'].clip(1, 4)
     rfm['m_score'] = rfm['m_score'].clip(1, 4)
     
+    # RFM Score
     rfm['rfm_score'] = rfm['r_score'].astype(str) + rfm['f_score'].astype(str) + rfm['m_score'].astype(str)
     
+    # ========== تقسيم العملاء (النسخة المحسنة) ==========
     def get_segment(row):
+        """
+        تقسيم العملاء بناءً على تركيبة R/F/M الفعلية
+        """
         r, f, m = row['r_score'], row['f_score'], row['m_score']
-        if r >= 3 and f >= 3 and m >= 3:
-            return 'VIP'
-        elif r >= 3 and f >= 2:
-            return 'نشط'
-        elif r <= 2 and f >= 3:
-            return 'مخلص'
-        elif r <= 2 and f <= 2:
-            return 'خطر'
-        else:
-            return 'متوسط'
+        
+        # أفضل العملاء (Champions)
+        if r >= 4 and f >= 4 and m >= 3:
+            return '🏆 Champions'
+        
+        # العملاء المخلصون (Loyal Customers)
+        if r >= 3 and f >= 4:
+            return '❤️ Loyal Customers'
+        
+        # العملاء الجدد (New Customers)
+        if r >= 4 and f <= 2:
+            return '🌟 New Customers'
+        
+        # العملاء المعرضون للخطر (At Risk)
+        if r <= 2 and f >= 3 and m >= 3:
+            return '⚠️ At Risk'
+        
+        # العملاء المفقودون (Lost)
+        if r <= 2 and f <= 2 and m <= 2:
+            return '💔 Lost'
+        
+        # العملاء النشطون (Active)
+        if r >= 3 and f >= 3:
+            return '✅ Active'
+        
+        # العملاء العاديون (Average)
+        return '📊 Average'
     
     rfm['segment'] = rfm.apply(get_segment, axis=1)
     
-    # إضافة تسميات للمستويات
-    rfm['recency_label'] = pd.cut(rfm['recency'], bins=[-1, 30, 90, 180, float('inf')],
-                                  labels=['حديث', 'أقل من 3 شهور', '3-6 شهور', 'أكثر من 6 شهور'])
-    rfm['frequency_label'] = pd.cut(rfm['frequency'], bins=[-1, 3, 6, 12, float('inf')],
-                                    labels=['قليل', 'متوسط', 'كثير', 'كثير جداً'])
-    rfm['monetary_label'] = pd.cut(rfm['monetary'], bins=[-1, 100, 500, 1000, float('inf')],
-                                   labels=['منخفض', 'متوسط', 'مرتفع', 'مرتفع جداً'])
+    # ========== تسميات إضافية ==========
+    try:
+        rfm['recency_label'] = pd.cut(rfm['recency'], bins=[-1, 30, 90, 180, float('inf')],
+                                      labels=['حديث', 'أقل من 3 شهور', '3-6 شهور', 'أكثر من 6 شهور'])
+        rfm['frequency_label'] = pd.cut(rfm['frequency'], bins=[-1, 3, 6, 12, float('inf')],
+                                        labels=['قليل', 'متوسط', 'كثير', 'كثير جداً'])
+        rfm['monetary_label'] = pd.cut(rfm['monetary'], bins=[-1, 100, 500, 1000, float('inf')],
+                                       labels=['منخفض', 'متوسط', 'مرتفع', 'مرتفع جداً'])
+    except:
+        pass
     
     print("✅ تم الانتهاء من تحليل RFM")
     print(f"\n📊 توزيع الشرائح:")
@@ -192,14 +219,7 @@ def calculate_rfm_simple(df, customer_col=None, date_col=None, amount_col=None):
 def get_rfm_insights(rfm):
     """
     الحصول على رؤى من تحليل RFM
-    
-    Args:
-        rfm: DataFrame من دالة calculate_rfm_simple
-    
-    Returns:
-        dict: رؤى وتوصيات
     """
-    
     if rfm is None or rfm.empty:
         return {
             'total_customers': 0,
@@ -219,13 +239,14 @@ def get_rfm_insights(rfm):
         'recommendations': []
     }
     
-    # توصيات لكل شريحة
     recommendations = {
-        'VIP': '🎯 الحفاظ على هؤلاء العملاء من خلال برامج الولاء والعروض الحصرية',
-        'نشط': '📈 تعزيز التفاعل مع العروض الترويجية لزيادة قيمة الطلب',
-        'مخلص': '🔄 إعادة تنشيط هؤلاء العملاء من خلال حملات تذكيرية',
-        'خطر': '⚠️ اتخاذ إجراءات عاجلة لمنع فقدان هؤلاء العملاء',
-        'متوسط': '📊 دراسة سلوكهم لتحويلهم إلى عملاء نشطين'
+        '🏆 Champions': '🎯 الحفاظ على هؤلاء العملاء من خلال برامج الولاء والعروض الحصرية',
+        '❤️ Loyal Customers': '📈 تعزيز التفاعل مع العروض الترويجية لزيادة قيمة الطلب',
+        '🌟 New Customers': '🤝 حملات ترحيبية وعروض للشراء الثاني',
+        '⚠️ At Risk': '📞 حملات استعادة وعروض خاصة وتواصل شخصي',
+        '💔 Lost': '🔄 حملات إعادة جذب وعروض استثنائية',
+        '✅ Active': '📊 عروض ترويجية منتظمة وتحديثات مستمرة',
+        '📊 Average': '🔍 دراسة السلوك ومحاولة رفع القيمة'
     }
     
     for segment, count in insights['segment_distribution'].items():

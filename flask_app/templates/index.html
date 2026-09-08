@@ -206,26 +206,62 @@
 </style>
 
 <script>
-$(document).ready(function() {
+// استخدام fetch للحصول على البيانات
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("📄 الصفحة الرئيسية جاهزة");
+    
     // تحميل الإحصائيات
-    $.get('/api/stats', function(response) {
-        if (response.success) {
-            const stats = response.stats;
-            $('#total-orders').text(stats.total_orders.toLocaleString());
-            $('#total-customers').text(stats.total_customers.toLocaleString());
-            $('#total-revenue').text(stats.total_revenue.toLocaleString() + ' ريال');
-            $('#avg-order').text(stats.avg_order_value.toFixed(2) + ' ريال');
-        } else {
-            $('#total-orders').text('لا توجد بيانات');
-            $('#total-customers').text('لا توجد بيانات');
-            $('#total-revenue').text('لا توجد بيانات');
-            $('#avg-order').text('لا توجد بيانات');
+    fetch('/api/stats')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('فشل الاتصال: ' + response.status);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("✅ تم استلام الإحصائيات:", data);
+            
+            if (data.success) {
+                const stats = data.stats || {};
+                document.getElementById('total-orders').textContent = (stats.total_orders || 0).toLocaleString();
+                document.getElementById('total-customers').textContent = (stats.total_customers || 0).toLocaleString();
+                document.getElementById('total-revenue').textContent = (stats.total_revenue || 0).toLocaleString() + ' ريال';
+                document.getElementById('avg-order').textContent = (stats.avg_order_value || 0).toFixed(2) + ' ريال';
+            } else {
+                throw new Error(data.error || 'خطأ غير معروف');
+            }
+        })
+        .catch(error => {
+            console.error('❌ خطأ في تحميل الإحصائيات:', error);
+            document.getElementById('total-orders').textContent = 'خطأ';
+            document.getElementById('total-customers').textContent = 'خطأ';
+            document.getElementById('total-revenue').textContent = 'خطأ';
+            document.getElementById('avg-order').textContent = 'خطأ';
+        });
+});
+
+// نسخة احتياطية باستخدام jQuery إذا كان متوفراً
+$(document).ready(function() {
+    console.log("📄 jQuery جاهز - تحميل الإحصائيات");
+    
+    $.ajax({
+        url: '/api/stats',
+        type: 'GET',
+        dataType: 'json',
+        timeout: 5000,
+        success: function(data) {
+            console.log("✅ (jQuery) تم استلام الإحصائيات:", data);
+            if (data.success) {
+                const stats = data.stats || {};
+                $('#total-orders').text((stats.total_orders || 0).toLocaleString());
+                $('#total-customers').text((stats.total_customers || 0).toLocaleString());
+                $('#total-revenue').text((stats.total_revenue || 0).toLocaleString() + ' ريال');
+                $('#avg-order').text((stats.avg_order_value || 0).toFixed(2) + ' ريال');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.warn('⚠️ (jQuery) فشل تحميل الإحصائيات:', error);
         }
-    }).fail(function() {
-        $('#total-orders').text('خطأ في التحميل');
-        $('#total-customers').text('خطأ في التحميل');
-        $('#total-revenue').text('خطأ في التحميل');
-        $('#avg-order').text('خطأ في التحميل');
     });
 });
 </script>
