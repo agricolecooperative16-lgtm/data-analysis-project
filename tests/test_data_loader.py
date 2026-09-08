@@ -1,51 +1,97 @@
-import unittest
+# tests/test_data_loader.py
+
+"""
+Unit tests for data loader module.
+"""
+
+import pytest
 import pandas as pd
-from pathlib import Path
-import sys
-sys.path.insert(0, str(Path(__file__).parent.parent))
+import os
+from src.data_loader import DataLoader
 
-from src.data.loader import DataLoader, load_data
 
-class TestDataLoader(unittest.TestCase):
+class TestDataLoader:
+    """Test data loading functionality."""
     
-    def test_load_csv(self):
-        """اختبار تحميل CSV"""
-        # إنشاء بيانات اختبار مؤقتة
-        test_df = pd.DataFrame({'col1': [1, 2, 3], 'col2': ['a', 'b', 'c']})
-        test_file = Path("test_temp.csv")
-        test_df.to_csv(test_file, index=False)
-        
-        try:
-            loaded = DataLoader.load_csv(str(test_file))
-            self.assertEqual(len(loaded), 3)
-            self.assertEqual(list(loaded.columns), ['col1', 'col2'])
-        finally:
-            test_file.unlink(missing_ok=True)
-        
-        print("✅ اختبار load_csv نجح")
+    @pytest.mark.unit
+    def test_data_loader_initialization(self):
+        """Test DataLoader initialization."""
+        loader = DataLoader()
+        assert loader is not None
     
-    def test_no_singleton(self):
-        """اختبار عدم استخدام Singleton"""
-        loader1 = DataLoader()
-        loader2 = DataLoader()
+    @pytest.mark.unit
+    def test_load_csv(self, temp_test_dir, sample_data):
+        """Test loading CSV file."""
+        # Create test CSV
+        file_path = os.path.join(temp_test_dir, 'test_data.csv')
+        sample_data.to_csv(file_path, index=False)
         
-        self.assertIsNot(loader1, loader2, 
-                        "DataLoader يجب ألا يستخدم Singleton")
-        print("✅ اختبار عدم استخدام Singleton نجح")
+        # Load data
+        loader = DataLoader()
+        df = loader.load_csv(file_path)
+        
+        assert df is not None
+        assert len(df) == len(sample_data)
+        assert all(col in df.columns for col in sample_data.columns)
     
-    def test_load_data_auto_detect(self):
-        """اختبار التحميل التلقائي"""
-        test_df = pd.DataFrame({'x': [1, 2], 'y': [3, 4]})
-        test_csv = Path("test_auto.csv")
-        test_df.to_csv(test_csv, index=False)
+    @pytest.mark.unit
+    def test_load_excel(self, temp_test_dir, sample_data):
+        """Test loading Excel file."""
+        # Create test Excel file
+        file_path = os.path.join(temp_test_dir, 'test_data.xlsx')
+        sample_data.to_excel(file_path, index=False)
         
-        try:
-            loaded = load_data(str(test_csv))
-            self.assertTrue(isinstance(loaded, pd.DataFrame))
-        finally:
-            test_csv.unlink(missing_ok=True)
+        # Load data
+        loader = DataLoader()
+        df = loader.load_excel(file_path)
         
-        print("✅ اختبار التحميل التلقائي نجح")
-
-if __name__ == "__main__":
-    unittest.main()
+        assert df is not None
+        assert len(df) == len(sample_data)
+    
+    @pytest.mark.unit
+    def test_load_data_auto_detect(self, temp_test_dir, sample_data):
+        """Test auto-detection of file format."""
+        loader = DataLoader()
+        
+        # Test CSV
+        csv_path = os.path.join(temp_test_dir, 'test.csv')
+        sample_data.to_csv(csv_path, index=False)
+        df_csv = loader.load_data(csv_path)
+        assert df_csv is not None
+        
+        # Test Excel
+        excel_path = os.path.join(temp_test_dir, 'test.xlsx')
+        sample_data.to_excel(excel_path, index=False)
+        df_excel = loader.load_data(excel_path)
+        assert df_excel is not None
+    
+    @pytest.mark.unit
+    def test_load_unsupported_format(self, temp_test_dir):
+        """Test loading unsupported file format."""
+        file_path = os.path.join(temp_test_dir, 'test.txt')
+        with open(file_path, 'w') as f:
+            f.write('test data')
+        
+        loader = DataLoader()
+        with pytest.raises(ValueError):
+            loader.load_data(file_path)
+    
+    @pytest.mark.unit
+    def test_load_missing_file(self):
+        """Test loading missing file."""
+        loader = DataLoader()
+        with pytest.raises(FileNotFoundError):
+            loader.load_data('non_existent_file.csv')
+    
+    @pytest.mark.unit
+    def test_validate_columns(self, sample_data):
+        """Test column validation."""
+        loader = DataLoader()
+        
+        required_cols = ['transaction_date', 'customer_id', 'quantity']
+        # Should pass
+        assert loader.validate_columns(sample_data, required_cols) is True
+        
+        # Should fail
+        required_cols_missing = ['transaction_date', 'non_existent_column']
+        assert loader.validate_columns(sample_data, required_cols_missing) is False
